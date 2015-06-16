@@ -1,4 +1,4 @@
-package no.kantega.debug.util;
+package no.kantega.debug.bytecode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,6 +6,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import no.kantega.debug.execution.model.Expression;
 
 /**
  * Standalone utility without external dependencies to parse a constantPool byte
@@ -16,15 +18,18 @@ import java.util.Map;
  * @author marska
  *
  */
-public class ConstantPoolParser {
+public class ConstantPool implements ConstantStore {
+	private int maxIndex = Integer.MAX_VALUE; //no limit to parsing unless specified otherwise
+	private int startFromIndex = 0; //read from beginning of byte array unless specified otherwise
+	private byte[] raw;
 
 	public static class InvokeDynamicImpl extends ConstantPoolStructure{
 
 		private int nameAndTypeIndex;
 		private int bootstrapIndex;
 
-		public InvokeDynamicImpl(List<Object> data, int bootstrapIndex , int nameAndTypeIndex) {
-			super(data);
+		public InvokeDynamicImpl(ConstantStore resolver, int bootstrapIndex , int nameAndTypeIndex) {
+			super(resolver);
 			this.bootstrapIndex = bootstrapIndex;
 			this.nameAndTypeIndex = nameAndTypeIndex;
 		}
@@ -41,38 +46,38 @@ public class ConstantPoolParser {
 
 	public static class MethodTypeImpl extends StringReferenceImpl {
 
-		public MethodTypeImpl(List<Object> data, int index) {
-			super(data, index);
+		public MethodTypeImpl(ConstantStore resolver, int index) {
+			super(resolver, index);
 		}
 
 	}
 
 	public static class FieldReferenceImpl extends MemberReferenceImpl {
 
-		public FieldReferenceImpl(final List<Object> data,
+		public FieldReferenceImpl(ConstantStore resolver,
 				final int classIndex, final int nameAndTypeIndex) {
-			super(data, classIndex, nameAndTypeIndex);
+			super(resolver, classIndex, nameAndTypeIndex);
 		}
 
 	}
 
-	public static class MethodReferenceImpl extends MemberReferenceImpl {
+	public static class MethodReferenceImpl extends MemberReferenceImpl implements Expression {
 
-		public MethodReferenceImpl(final List<Object> data,
+		public MethodReferenceImpl(ConstantStore resolver,
 				final int classIndex, final int nameAndTypeIndex) {
-			super(data, classIndex, nameAndTypeIndex);
+			super(resolver, classIndex, nameAndTypeIndex);
 		}
 
 	}
 
-	public static class MemberReferenceImpl extends ConstantPoolStructure {
+	public static class MemberReferenceImpl extends ConstantPoolStructure implements Expression {
 
 		private int classIndex;
 		private int nameAndTypeIndex;
 
-		public MemberReferenceImpl(List<Object> data, int classIndex,
+		public MemberReferenceImpl(ConstantResolver resolver, int classIndex,
 				int nameAndTypeIndex) {
-			super(data);
+			super(resolver);
 			this.classIndex = classIndex;
 			this.nameAndTypeIndex = nameAndTypeIndex;
 		}
@@ -95,17 +100,17 @@ public class ConstantPoolParser {
 	public static class InterfaceMethodReferenceImpl extends
 			MemberReferenceImpl {
 
-		public InterfaceMethodReferenceImpl(final List<Object> data,
+		public InterfaceMethodReferenceImpl(ConstantResolver resolver,
 				final int classIndex, final int nameAndTypeIndex) {
-			super(data, classIndex, nameAndTypeIndex);
+			super(resolver, classIndex, nameAndTypeIndex);
 		}
 
 	}
 
 	public static class ClassReferenceImpl extends StringReferenceImpl {
 
-		public ClassReferenceImpl(List<Object> data, int index) {
-			super(data, index);
+		public ClassReferenceImpl(ConstantResolver resolver, int index) {
+			super(resolver, index);
 		}
 		
 		public String className() {
@@ -123,8 +128,8 @@ public class ConstantPoolParser {
 		private int referenceIndex;
 		private byte type;
 
-		public MethodHandle(List<Object> data, byte type, int index) {
-			super(data);
+		public MethodHandle(ConstantResolver resolver, byte type, int index) {
+			super(resolver);
 			this.type = type;
 			this.referenceIndex = index;
 		}
@@ -141,14 +146,14 @@ public class ConstantPoolParser {
 
 	public static class ConstantPoolStructure {
 
-		private List<Object> data;
+		private ConstantResolver resolver;
 
-		public ConstantPoolStructure(List<Object> data) {
-			this.data = data;
+		public ConstantPoolStructure(ConstantResolver resolver) {
+			this.resolver = resolver;
 		}
 
 		protected Object getReference(final int index) {
-			return this.data.get(index-1);
+			return this.resolver.getConstant(index);
 		}
 		
 		protected String internalNameToSource(final String internalName) {
@@ -169,9 +174,9 @@ public class ConstantPoolParser {
 		private int nameIndex;
 		private int descriptorIndex;
 
-		public NameAndTypeImpl(List<Object> data, int nameIndex,
+		public NameAndTypeImpl(ConstantResolver resolver, int nameIndex,
 				int descriptorIndex) {
-			super(data);
+			super(resolver);
 			this.nameIndex = nameIndex;
 			this.descriptorIndex = descriptorIndex;
 		}
@@ -194,8 +199,8 @@ public class ConstantPoolParser {
 
 		private int index;
 
-		public StringReferenceImpl(List<Object> destination, int index) {
-			super(destination);
+		public StringReferenceImpl(ConstantResolver resolver, int index) {
+			super(resolver);
 			this.index = index;
 		}
 
@@ -214,14 +219,14 @@ public class ConstantPoolParser {
 			new LongParser(), new DoubleParser(), new NameAndTypeParser(),
 			new MethodTypeParser(), new InterfaceMethodReferenceParser(),
 			new MethodReferenceParser(), new FieldReferenceParser(),
-			new StringReferenceParser(), new ClassConstParser());
+			new StringReferenceParser(), new ClassConstParser(), new InvokeDynamicParser(), new MethodHandleParser(), new MethodTypeParser());
 	private static Map<Byte, ValueParser> parserMap = buildParserMap(allParsers);
 
 	public static class InvokeDynamicParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> data, byte[] raw, int startFrom) {
-			data.add(new InvokeDynamicImpl(data, readIndex(raw,
+		int parseNext(ConstantStore data, byte[] raw, int startFrom) {
+			data.addConstant(new InvokeDynamicImpl(data, readIndex(raw,
 					startFrom), readIndex(raw, startFrom + 2)));
 			return startFrom + 4;
 		}
@@ -236,8 +241,8 @@ public class ConstantPoolParser {
 	public static class MethodTypeParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(new MethodTypeImpl(destination, readIndex(raw, startFrom)));
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(new MethodTypeImpl(destination, readIndex(raw, startFrom)));
 			return startFrom + 2;
 		}
 
@@ -251,8 +256,8 @@ public class ConstantPoolParser {
 	public static class MethodHandleParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(new MethodHandle(destination, raw[startFrom],
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(new MethodHandle(destination, raw[startFrom],
 					readIndex(raw, startFrom + 1)));
 			return startFrom + 3;
 		}
@@ -267,8 +272,8 @@ public class ConstantPoolParser {
 	public static class NameAndTypeParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(new NameAndTypeImpl(destination, readIndex(raw, startFrom), readIndex(raw,
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(new NameAndTypeImpl(destination, readIndex(raw, startFrom), readIndex(raw,
 					startFrom + 2)));
 			return startFrom + 4;
 		}
@@ -283,8 +288,8 @@ public class ConstantPoolParser {
 	public static class InterfaceMethodReferenceParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> data, byte[] raw, int startFrom) {
-			data.add(new InterfaceMethodReferenceImpl(data, readIndex(raw, startFrom), readIndex(raw,
+		int parseNext(ConstantStore data, byte[] raw, int startFrom) {
+			data.addConstant(new InterfaceMethodReferenceImpl(data, readIndex(raw, startFrom), readIndex(raw,
 					startFrom + 2)));
 			return startFrom + 4;
 		}
@@ -299,8 +304,8 @@ public class ConstantPoolParser {
 	public static class MethodReferenceParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> data, byte[] raw, int startFrom) {
-			data.add(new MethodReferenceImpl(data, readIndex(raw,
+		int parseNext(ConstantStore data, byte[] raw, int startFrom) {
+			data.addConstant(new MethodReferenceImpl(data, readIndex(raw,
 					startFrom), readIndex(raw, startFrom + 2)));
 			return startFrom + 4;
 		}
@@ -315,8 +320,8 @@ public class ConstantPoolParser {
 	public static class FieldReferenceParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> data, byte[] raw, int startFrom) {
-			data.add(new FieldReferenceImpl(data, readIndex(raw,
+		int parseNext(ConstantStore data, byte[] raw, int startFrom) {
+			data.addConstant(new FieldReferenceImpl(data, readIndex(raw,
 					startFrom), readIndex(raw, startFrom + 2)));
 			return startFrom + 4;
 		}
@@ -331,8 +336,8 @@ public class ConstantPoolParser {
 	public static class StringReferenceParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(new StringReferenceImpl(destination, readIndex(raw, startFrom)));
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(new StringReferenceImpl(destination, readIndex(raw, startFrom)));
 			return startFrom + 2;
 		}
 
@@ -346,8 +351,8 @@ public class ConstantPoolParser {
 	public static class ClassConstParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(new ClassReferenceImpl(destination, readIndex(raw, startFrom)));
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(new ClassReferenceImpl(destination, readIndex(raw, startFrom)));
 			return startFrom + 2;
 		}
 
@@ -375,8 +380,8 @@ public class ConstantPoolParser {
 	public static class LongParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(getValue(raw, startFrom));
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(getValue(raw, startFrom));
 			return startFrom + 8;
 		}
 
@@ -410,8 +415,8 @@ public class ConstantPoolParser {
 	public static class IntegerParser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
-			destination.add(getValue(raw, startFrom));
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
+			destination.addConstant(getValue(raw, startFrom));
 			return startFrom + 4;
 		}
 
@@ -437,10 +442,10 @@ public class ConstantPoolParser {
 	static class Utf8Parser extends ValueParser {
 
 		@Override
-		int parseNext(List<Object> destination, byte[] raw, int startFrom) {
+		int parseNext(ConstantStore destination, byte[] raw, int startFrom) {
 			int length = readIndex(raw, startFrom);// get string length from the
 													// first 2 bytes
-			destination.add(parseUtf(startFrom + 2, length, raw));
+			destination.addConstant(parseUtf(startFrom + 2, length, raw));
 			return startFrom + 2 + length;
 		}
 		
@@ -456,7 +461,7 @@ public class ConstantPoolParser {
 	}
 
 	static abstract class ValueParser {
-		abstract int parseNext(List<Object> destination, byte[] raw,
+		abstract int parseNext(ConstantStore destination, byte[] raw,
 				int startFrom);
 
 		abstract byte getTag();
@@ -466,23 +471,23 @@ public class ConstantPoolParser {
 		}
 	}
 
-	public static List<Object> parseConstantPool(byte[] raw) {
-
-		return parseConstantPool(0, raw);
+	public ConstantPool(final byte[] raw){
+		this.raw=raw;
+		parseConstantPool();
 	}
+	
 
-	public static List<Object> parseConstantPool(final int startFrom, byte[] raw) {
-		return parseConstantPool(startFrom, raw, Integer.MAX_VALUE);//do not limit items
-	}
+	
 
-	public static List<Object> parseConstantPool(final int startFrom, byte[] raw, int toConstantIndex) {
-		final List<Object> result = new ArrayList<Object>();
-		int index = startFrom;
-		while (index < raw.length && result.size() < toConstantIndex - 1) {
+
+
+	private void parseConstantPool() {
+		this.addConstant("Index 0 is not used, constant pool is indexed from 1");
+		int index = startFromIndex;
+		while (index < raw.length && this.constantCount() < maxIndex ) {
 			final ValueParser parser = parserForTag(raw[index]);
-			index = parser.parseNext(result, raw, ++index);
+			index = parser.parseNext(this, raw, ++index);
 		}
-		return result;
 	}
 
 	private static ValueParser parserForTag(final byte tag) {
@@ -497,11 +502,35 @@ public class ConstantPoolParser {
 	private static Map<Byte, ValueParser> buildParserMap(
 			Collection<ValueParser> all) {
 
-		HashMap<Byte, ValueParser> map = new HashMap<Byte, ConstantPoolParser.ValueParser>();
+		HashMap<Byte, ValueParser> map = new HashMap<Byte, ConstantPool.ValueParser>();
 		for (final ValueParser parser : all) {
 			map.put(parser.getTag(), parser);
 		}
 		return map;
+	}
+
+	private List<Object> data=new ArrayList<Object>();
+
+	public Object getConstant(int index) {
+		return this.data.get(index);
+	}
+
+
+
+
+
+
+	public int constantCount() {
+		return this.data.size();
+	}
+
+
+
+
+
+
+	public void addConstant(Object constant) {
+		this.data.add(constant);
 	}
 
 }
