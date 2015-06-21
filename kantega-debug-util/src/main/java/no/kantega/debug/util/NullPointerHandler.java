@@ -34,7 +34,7 @@ public class NullPointerHandler {
 					messageField,
 					event.virtualMachine()
 							.mirrorOf(
-									"NullPointer occured invoking "
+									" occured invoking "
 											+ expression));
 			return true;
 		} catch (Exception e) {
