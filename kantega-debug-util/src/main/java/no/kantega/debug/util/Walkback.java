@@ -1,4 +1,4 @@
-package no.kantega.debug.agent;
+package no.kantega.debug.util;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.LocalVariable;

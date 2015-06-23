@@ -1,9 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>kantega.debug</groupId>
 	<artifactId>kantega-debug-util</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>${kantega.debug.version}</version>
 	<name>Debug utilities</name>
 	<dependencies>
 		<dependency>
@@ -19,4 +18,9 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	<parent>
+		<groupId>kantega.debug</groupId>
+		<artifactId>kantega.debug</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
 </project>

@@ -8,8 +8,6 @@ import java.util.Map;
 import no.kantega.debug.bytecode.ConstantPool;
 import no.kantega.debug.execution.model.Expression;
 
-import com.sun.xml.internal.ws.org.objectweb.asm.Opcodes;
-
 public class DebugExpressionResolver {
 
 	static class MethodInvocation extends ExpressionBuilder {
@@ -23,7 +21,7 @@ public class DebugExpressionResolver {
 		@Override
 		public byte[] supportsByteCodes() {
 			
-			return new byte[]{(byte)Opcodes.INVOKEVIRTUAL, (byte)Opcodes.INVOKEINTERFACE};
+			return new byte[]{-71, -74};
 		}
 
 	}
