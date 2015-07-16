@@ -5,11 +5,7 @@ import java.lang.management.ManagementFactory;
 import java.util.Iterator;
 import java.util.concurrent.Executors;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
 import no.kantega.debug.util.NullPointerHandler;
@@ -28,7 +24,7 @@ import com.sun.jdi.request.ExceptionRequest;
 public class DebugAgent implements DebugAgentMBean {
 
 	private ExceptionRequest nullPointerExceptionRequest;
-	private boolean shouldRun = true;
+	private boolean shouldRun = false;
 	private VirtualMachine vm;
 	private boolean nullPointerDiagnosed=true;
 	private boolean emitWalkbacks=true;
@@ -162,5 +158,29 @@ public class DebugAgent implements DebugAgentMBean {
 	public void setEmitWalkbacks(boolean emitWalkbacks) {
 		this.emitWalkbacks = emitWalkbacks;
 	}
+
+	@Override
+	public boolean isRunning() {
+		return this.shouldRun;
+	}
+
+	@Override
+	public String toggleString() {
+		return this.shouldRun ? "stop" : "start";
+	}
+
+	@Override
+	public void toggle() throws InterruptedException, IOException {
+		if(this.shouldRun) {
+			stop();
+		} else {
+			start();
+		}
+		
+	}
+	
+	
+	
+	
 
 }

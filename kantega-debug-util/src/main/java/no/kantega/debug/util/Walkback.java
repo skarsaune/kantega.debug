@@ -27,6 +27,7 @@ public class Walkback {
 
 	private static void printFrame(StackFrame frame, StringBuilder builder) {
 		final Method method = frame.location().method();
+
 		ObjectReference thisObject = frame.thisObject();
 		builder.append(" at ").append(method.declaringType().name()).append('.').append(method.name()).append('(');
 		if(sourceName(frame) != null) {
@@ -36,12 +37,17 @@ public class Walkback {
 			builder.append(':').append(frame.location().lineNumber());
 		}
 		builder.append(")\n");
+		if(method.isNative()) {
+			builder.append("<native method>\n");
+			return;
+		}
 		
 		if(thisObject != null) {
-			appendObject("this", thisObject, frame.thread(), builder);
+			appendObject("\tthis", thisObject, frame.thread(), builder);
 		}
 		try {
 			for (LocalVariable localVariable : frame.visibleVariables()) {
+				builder.append(localVariable.isArgument() ? "\targ: " : "\ttmp: ");
 				appendvalue(localVariable.name(), frame.getValue(localVariable), frame.thread(), builder);
 			}
 		} catch (AbsentInformationException e) {
@@ -66,17 +72,17 @@ public class Walkback {
 		if(value instanceof ObjectReference) {
 			appendObject(name, (ObjectReference)value, thread, builder);
 		} else if(value == null) {
-			builder.append('\t').append(name).append(" = null\n");
+			builder.append(name).append(" = null\n");
 		}
 		else {
-			builder.append('\t').append(value.type().name()).append(' ').append(name).append(" = ").append(value.toString()).append('\n');
+			builder.append(value.type().name()).append(' ').append(name).append(" = ").append(value.toString()).append('\n');
 		}
 		
 	}
 
 	private static void appendObject(final String name, ObjectReference object, ThreadReference thread,
 			StringBuilder builder) {
-		builder.append('\t').append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")\n");
+		builder.append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")\n");
 	}
 
 //	private static Object printObject(ObjectReference object, ThreadReference thread) {

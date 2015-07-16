@@ -1,6 +1,5 @@
+**/target/
+**/.classpath
+**/.project
+**/.settings/
 
-.project
-
-*.prefs
-
-kantega-debug-webapp/.classpath

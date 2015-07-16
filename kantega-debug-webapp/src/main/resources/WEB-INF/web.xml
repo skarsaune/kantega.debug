@@ -1,0 +1,45 @@
+<web-app version="2.4"
+         xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+	
+
+  <display-name>Centipede debug agent</display-name>
+  <description>War utility that uses a DebugAgent to connect to the VM itself and add diagnostics through JDI and offers itself as a hawt.io plugin</description>
+
+	<servlet>
+		<servlet-name>DebugAgentServlet</servlet-name>
+		<servlet-class>no.kantega.debug.bootstrap.DebugAgentServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+
+  <context-param>
+    <description>Plugin's path on the server</description>
+    <param-name>plugin-context</param-name>
+    <param-value>${plugin-context}</param-value>
+  </context-param>
+
+  <context-param>
+    <description>Plugin's path on the server</description>
+    <param-name>plugin-name</param-name>
+    <param-value>${project.artifactId}</param-value>
+  </context-param>
+
+  <context-param>
+    <description>Plugin's path on the server</description>
+    <param-name>plugin-domain</param-name>
+    <param-value>${plugin-domain}</param-value>
+  </context-param>
+
+  <context-param>
+    <description>Plugin's path on the server</description>
+    <param-name>plugin-scripts</param-name>
+    <param-value>${plugin-scripts}</param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>no.kantega.debug.hawt.plugin.PluginContextListener</listener-class>
+  </listener>
+	
+
+</web-app>

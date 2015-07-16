@@ -8,14 +8,18 @@ public interface DebugAgentMBean {
 	
 	void stop();
 
-	public abstract void setEmitWalkbacks(boolean emitWalkbacks);
+	void setEmitWalkbacks(boolean emitWalkbacks);
 
-	public abstract boolean isEmitWalkbacks();
+	boolean isEmitWalkbacks();
 
-	public abstract boolean isNullPointerDiagnosed();
+	boolean isNullPointerDiagnosed();
 
-	public abstract void setNullPointerDiagnosed(boolean nullPointerDiagnosed);
+	void setNullPointerDiagnosed(boolean nullPointerDiagnosed);
 	
+	boolean isRunning();
 	
+	String toggleString();
+	
+	void toggle() throws InterruptedException, IOException;
 
 }

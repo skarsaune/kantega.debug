@@ -26,7 +26,7 @@ public class DebuggingConnector {
 					virtualMachine = Bootstrap
 							.virtualMachineManager().createVirtualMachine(
 									connection);
-					virtualMachine.setDebugTraceMode(VirtualMachine.TRACE_ALL);
+//					virtualMachine.setDebugTraceMode(VirtualMachine.TRACE_ALL);
 					return virtualMachine;
 				} catch (IOException e) {
 					e.printStackTrace();
