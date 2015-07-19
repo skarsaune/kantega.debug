@@ -46,6 +46,6 @@
 	<modules>
 		<module>kantega-debug-agent</module>
 		<module>kantega-debug-util</module>
-		<module>kantega-debug-webapp</module>
+		<module>decentipede-web</module>
 	</modules>
 </project>

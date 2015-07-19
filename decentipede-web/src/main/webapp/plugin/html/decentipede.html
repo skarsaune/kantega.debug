@@ -2,7 +2,8 @@
 
   <div class="row-fluid">
     <div class="span6 offset3">
-      <h2><h3 class="help-header centered">Welcome to Centipede! <img class='no-shadow' ng-src='{{branding.appLogo}}'></h3>
+      <h2><h3 class="help-header centered">Welcome to <img class='no-shadow' src='../decentipede-web/plugin/inc/img/decentipede-banner.png'></h3>
+      <h3>JVM Debugging extensions</h3>
       </h2>
     </div>
   </div>
@@ -11,13 +12,9 @@
       <div class="centered">
         <input type="checkbox" ng-model="emitWalkbacks">Emit walkbacks</input>
         <input type="checkbox" ng-model="diagnoseNullPointers">Diagnose Nullpointer Exceptions</input>
+        <input type="checkbox" ng-model="running">Is running</input>
       </div>
     </div>
   </div>
-  <div class="row-fluid">
-    <div class="span6 offset3">
-      <p class="centered">
-      This is an example of a very simple hawtio plugin that's discovered via JMX using jolokia.</p>
-    </div>
-  </div>
+
 </div>
