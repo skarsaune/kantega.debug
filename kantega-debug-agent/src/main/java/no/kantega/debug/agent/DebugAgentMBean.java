@@ -16,10 +16,5 @@ public interface DebugAgentMBean {
 
 	void setNullPointerDiagnosed(boolean nullPointerDiagnosed);
 	
-	boolean isRunning();
-	
-	String toggleString();
-	
-	void toggle() throws InterruptedException, IOException;
-
+	boolean isRunning();	
 }

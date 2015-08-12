@@ -23,12 +23,15 @@ import com.sun.jdi.request.ExceptionRequest;
 
 public class DebugAgent implements DebugAgentMBean {
 
+	private static final String DEBUG_AGENT_JMX_NAME = "no.kantega.debug:type=DebugAgent";
+	private static final String INSTANCE_COUNTER_JMX_NAME = "no.kantega.debug:type=Instances";
 	private ExceptionRequest nullPointerExceptionRequest;
-	private boolean shouldRun = false;
+	private boolean running = false;
 	private VirtualMachine vm;
 	private boolean nullPointerDiagnosed=true;
 	private boolean emitWalkbacks=true;
 	final private VirtualMachineProvider provider;
+	private InstanceCounter counter;
 
 	@Override
 	public void setNullPointerDiagnosed(boolean nullPointerDiagnosed) {
@@ -40,13 +43,13 @@ public class DebugAgent implements DebugAgentMBean {
 		super();
 		this.provider = provider;
 		registerMyself();
+
 	}
 
 	private void registerMyself() {
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		try {
-			ObjectName name = new ObjectName("no.kantega.debug:type=DebugAgent");
-			mbs.registerMBean(this, name);
+			mbs.registerMBean(this, new ObjectName(DEBUG_AGENT_JMX_NAME));
 		} catch (Exception e) {
 			LoggerFactory.getLogger(this.getClass()).error(
 					"Unable to register myself in JMX", e);
@@ -57,7 +60,7 @@ public class DebugAgent implements DebugAgentMBean {
 	public void start() throws InterruptedException, IOException {
 		this.vm = this.provider.virtualMachine();
 		if (this.vm == null) {
-			this.shouldRun = false;
+			this.running = false;
 			LoggerFactory.getLogger(this.getClass()).error(
 					"Could not start manager as there is no available VM");
 			return;
@@ -68,6 +71,7 @@ public class DebugAgent implements DebugAgentMBean {
 			nullPointerRequest().enable();
 
 		}
+		getInstanceCounter();
 		Executors.newFixedThreadPool(1).execute(new Runnable() {
 
 			@Override
@@ -76,12 +80,12 @@ public class DebugAgent implements DebugAgentMBean {
 
 			}
 		});
-		runEventLoop();
 	}
 
 	public void stop() {
-		this.shouldRun = false;
+		this.running = false;
 		if (vm != null) {
+			this.nullPointerExceptionRequest = null;
 			this.vm.dispose();
 			this.vm = null;
 		}
@@ -93,8 +97,8 @@ public class DebugAgent implements DebugAgentMBean {
 	}
 
 	private void runEventLoop() {
-		this.shouldRun = true;
-		while (shouldRun) {
+		this.running = true;
+		while (running) {
 			try {
 
 				EventSet set = vm.eventQueue().remove();
@@ -161,26 +165,25 @@ public class DebugAgent implements DebugAgentMBean {
 
 	@Override
 	public boolean isRunning() {
-		return this.shouldRun;
-	}
+		return this.running;
+	}	
+	
+	
+	private InstanceCounter getInstanceCounter(){
+		if(this.counter==null) {
+			this.counter=new InstanceCounter(this.vm);
+			//also register in JMX
+			try {
+				ManagementFactory.getPlatformMBeanServer().registerMBean(this.counter, new ObjectName(INSTANCE_COUNTER_JMX_NAME));
+			} catch (Exception e) {
+				LoggerFactory.getLogger(this.getClass()).error(
+						"Error registering in JMX", e);
 
-	@Override
-	public String toggleString() {
-		return this.shouldRun ? "stop" : "start";
-	}
-
-	@Override
-	public void toggle() throws InterruptedException, IOException {
-		if(this.shouldRun) {
-			stop();
-		} else {
-			start();
+			} 
+			
 		}
-		
+		return this.counter;
 	}
-	
-	
-	
 	
 
 }
