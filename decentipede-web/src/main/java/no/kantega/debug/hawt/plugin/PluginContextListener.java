@@ -2,6 +2,7 @@ package no.kantega.debug.hawt.plugin;
 
 
 import io.hawt.web.plugin.HawtioPlugin;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ public class PluginContextListener implements ServletContextListener {
     ServletContext context = servletContextEvent.getServletContext();
 
     plugin = new HawtioPlugin();
-    plugin.setContext((String)context.getInitParameter("plugin-context"));
+    plugin.setContext(getContextPath(context));
     plugin.setName(context.getInitParameter("plugin-name"));
     plugin.setScripts(context.getInitParameter("plugin-scripts"));
     plugin.setDomain(null);
@@ -29,6 +30,14 @@ public class PluginContextListener implements ServletContextListener {
 
     LOG.info("Initialized {} plugin", plugin.getName());
   }
+
+	private String getContextPath(ServletContext context) {
+		String contextPath = context.getContextPath();
+		if (contextPath == null || contextPath.length() == 0) {
+			contextPath = (String) context.getInitParameter("plugin-context");
+		}
+		return contextPath;
+	}
 
   @Override
   public void contextDestroyed(ServletContextEvent servletContextEvent) {

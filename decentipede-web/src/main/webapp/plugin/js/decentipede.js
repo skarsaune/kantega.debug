@@ -48,8 +48,9 @@ var DeCentipede = (function(DeCentipede) {
 	 * hawtioCore to run, which provides services like workspace, viewRegistry
 	 * and layoutFull used by the run function
 	 */
-	DeCentipede.module = angular.module('decentipede', [ 'hawtioCore' ])
-			.config(function($routeProvider) {
+	DeCentipede.module = angular.module('decentipede',
+			[ 'hawtioCore', 'ui.bootstrap.typeahead' ]).config(
+			function($routeProvider) {
 
 				/**
 				 * Here we define the route for our plugin. One note is to avoid
@@ -128,10 +129,97 @@ var DeCentipede = (function(DeCentipede) {
 	 * 
 	 */
 	DeCentipede.DeCentipedeController = function($scope, jolokia) {
-		$scope.hello = "Hello DeCentipede!";
-		$scope.NullPointerDiagnosed = false;
-		$scope.running = false;
-		$scope.EmitWalkbacks = false;
+
+		var loadedClasses = [];
+
+		$scope.table = {
+			tabs : {
+				'Settings' : [ 'EmitWalkbacks', 'NullPointerDiagnosed' ],
+				'Monitoring' : ['MonitoredClasses', 'AddClass' ],
+				'Walkbacks' : []
+			},
+			properties : {
+				EmitWalkbacks : {
+					label : "Emit walkbacks",
+					tooltip : 'The agent should produce walkbacks on exceptions and breakpoints',
+					type : 'boolean'
+				},
+				NullPointerDiagnosed : {
+					label : "Diagnose NullPointerExceptions",
+					tooltip : 'The agent will attempt to enrich NullPointerExceptions with details regarding the cause',
+					type : 'boolean'
+				},
+				MonitoredClasses : {
+					label : "Monitor instances of classes",
+					tooltip : 'Monitor instance counts of these classes',
+					type : 'array',
+					readonly : 'true'
+//						,
+//					'input-element' : 'textarea'
+				// 'input-attributes': {
+				// typeahead: "item for item in loadedClasses |
+				// filter:$viewValue"
+				// }
+				}
+//				,
+//				AddClass : {
+//					label : "Add class",
+//					type : "string",
+//					formTemplate : '<input id="addClass" type="text" typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue">'
+//				}
+				
+			/*
+			 * , RemoveClass : { label: "Remove class", type: "string",
+			 * formTemplate: '<select ng-options="cfor c in
+			 * agent.MonitoredClasses" ng-model="classToRemove"
+			 * title="RemoveClass"></select>' }
+			 */
+			}
+		};
+		var lastResult=[];
+		$scope.loadedClasses = function(viewValue) {
+			if(viewValue === undefined) {
+				return [];
+			}
+			if(!$scope.running || viewValue.length < 3) {
+				return [viewValue];
+			}
+			var fromJolokia= jolokia.request( {
+				type : "exec",
+				operation : "candidateClassesForFilter(java.lang.String)",
+				arguments: [viewValue],
+				mbean : mbean
+			} );
+
+			return fromJolokia.value;
+		};
+
+		// $scope.gridOptions = {
+		// scope: $scope,
+		// selectedItems: [],
+		// showFilter: false,
+		// canSelectRows: false,
+		// enableRowSelection: false,
+		// enableRowClickSelection: false,
+		// keepLastSelected: false,
+		// multiSelect: true,
+		// showColumnMenu: true,
+		// displaySelectionCheckbox: false,
+		// filterOptions: {
+		// filterText: ''
+		// },
+		// // TODO disabled for now as it causes
+		// https://github.com/hawtio/hawtio/issues/262
+		// //sortInfo: { field: 'name', direction: 'asc'},
+		// data: 'agent'//,
+		// //columnDefs: propertiesColumnDefs
+		// };
+
+		// $scope.hello = "Hello DeCentipede!";
+		// $scope.NullPointerDiagnosed = false;
+		// $scope.running = false;
+		// $scope.EmitWalkbacks = false;
+		$scope.agent = {};
 		var mirroredAttributes = [ 'NullPointerDiagnosed', 'EmitWalkbacks' ];
 		var isSettingUi = true;
 
@@ -140,27 +228,29 @@ var DeCentipede = (function(DeCentipede) {
 		// set up watch to reflect changes back to jolokia immediately
 		for (index = 0; index < mirroredAttributes.length; index++) {
 			var attribute = mirroredAttributes[index];
-			$scope.$watch(attribute, function(newValue, oldValue, scope) {
-				if (!isSettingUi && jolokia && newValue !== oldValue) {// ensure
-																		// that
-																		// we do
-																		// not
-																		// update
-																		// based
-																		// on
-																		// updates
-																		// from
-																		// jolokia
+			$scope.$watch('agent.' + attribute, function(newValue, oldValue,
+					scope) {
+				if (!isSettingUi && jolokia) {// ensure
+					// that
+					// we do
+					// not
+					// update
+					// based
+					// on
+					// updates
+					// from
+					// jolokia
+					DeCentipede.log.info("Sending updates to jolokia")
 					var requests = [];
 					for (i = 0; i < mirroredAttributes.length; i++) {
 						requests.push({
 							type : 'write',
 							mbean : mbean,
 							attribute : mirroredAttributes[i],
-							value : $scope[mirroredAttributes[i]]
+							value : $scope.agent[mirroredAttributes[i]]
 						})
 					}
-
+					//
 					jolokia.request(requests, onSuccess(function() {
 						DeCentipede.log.info("Updated attributes in jolokia");
 					}))
@@ -200,13 +290,36 @@ var DeCentipede = (function(DeCentipede) {
 			arguments : []
 		}, onSuccess(renderCentipede));
 
+
 		function renderCentipede(response) {
 			isSettingUi = true;
-			for (index = 0; index < mirroredAttributes.length; index++) {
-				var attribute = mirroredAttributes[index];
+			// for (index = 0; index < mirroredAttributes.length; index++) {
+			// var attribute = mirroredAttributes[index];
+			//
+			//				
+			// }
+			DeCentipede.log.info(Date.now() + " Updating values from JMX");
+			$scope.agent = response.value;
+			// split on lines
+//			var classArray = $scope.agent.MonitoredClasses;
+//			var classString = '';
+//			for (var i = 0; i < classArray.length; i++) {
+//				classString += classArray[i] + '\n';
+//			}
+//			$scope.agent.MonitoredClasses = classString;
 
-				$scope[attribute] = response.value[attribute];
-			}
+//			var walkbacks = $scope.agent.Walkbacks;
+//			$scope.agent.Walkbacks={};
+//			for (var i = 0; i < walkbacks.length; i++) {
+//				var walkback = walkbacks[i];
+//				$scope.agent.walkbacks[walkback]="../decentipede-web/walkbacks" + walkback;
+//				$scope.table.properties.Walkbacks.push({walkback : walkback, type : "string", readonly : "true"});
+//				$scope.table.tabs.Walkbacks.pushd(walkback);
+//			}
+//			$scope.agent.MonitoredClasses = classString;
+			
+			
+			
 			$scope.running = response.value['Running'];
 			Core.$apply($scope);
 			isSettingUi = false;

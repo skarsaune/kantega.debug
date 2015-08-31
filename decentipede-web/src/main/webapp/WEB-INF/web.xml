@@ -1,47 +1,55 @@
-<web-app version="2.4"
-         xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
-	
-
-  <display-name>DeCentipede debug agent</display-name>
-  <description>War utility that uses a DebugAgent to connect to the VM itself and add diagnostics through JDI and offers itself as a hawt.io plugin</description>
+<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
 
 
-
-  <context-param>
-    <description>Plugin's path on the server</description>
-    <param-name>plugin-context</param-name>
-    <param-value>/decentipede-web</param-value>
-  </context-param>
-
-  <context-param>
-    <description>Plugin's path on the server</description>
-    <param-name>plugin-name</param-name>
-    <param-value>decentipede</param-value>
-  </context-param>
-
-  <context-param>
-    <description>Plugin's path on the server</description>
-    <param-name>plugin-domain</param-name>
-    <param-value></param-value>
-  </context-param>
-
-  <context-param>
-    <description>Plugin's path on the server</description>
-    <param-name>plugin-scripts</param-name>
-    <param-value>plugin/js/decentipede.js</param-value>
-  </context-param>
+	<display-name>DeCentipede debug agent</display-name>
+	<description>War utility that uses a DebugAgent to connect to the VM itself and add diagnostics through JDI and offers itself as a hawt.io plugin</description>
 
 
-  <listener>
-    <listener-class>no.kantega.debug.bootstrap.DebugAgentRegistrer</listener-class>
-  </listener>
 
-  <listener>
-    <listener-class>no.kantega.debug.hawt.plugin.PluginContextListener</listener-class>
-  </listener>
-	
-	
-	
+	<context-param>
+		<description>Plugin's path on the server, will only be used if the servlet context getContextPath method does not answer</description>
+		<param-name>plugin-context</param-name>
+		<param-value>/decentipede-web</param-value>
+	</context-param>
+
+	<context-param>
+		<description>Plugin's path on the server</description>
+		<param-name>plugin-name</param-name>
+		<param-value>decentipede</param-value>
+	</context-param>
+
+	<context-param>
+		<description>Plugin's path on the server</description>
+		<param-name>plugin-domain</param-name>
+		<param-value></param-value>
+	</context-param>
+
+	<context-param>
+		<description>Plugin's path on the server</description>
+		<param-name>plugin-scripts</param-name>
+		<param-value>plugin/js/decentipede.js</param-value>
+	</context-param>
+
+	<servlet>
+		<servlet-name>WalkbackServlet</servlet-name>
+		<servlet-class>no.kantega.debug.servlet.WalkbackServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>WalkbackServlet</servlet-name>
+		<url-pattern>/walkback/*</url-pattern>
+	</servlet-mapping>
+
+
+	<listener>
+		<listener-class>no.kantega.debug.hawt.plugin.PluginContextListener</listener-class>
+	</listener>
+
+
+
 
 </web-app>

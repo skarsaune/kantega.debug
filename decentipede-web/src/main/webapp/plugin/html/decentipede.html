@@ -1,3 +1,9 @@
+<script type="text/ng-template" id="gridTemplate">
+  <table id="attributesGrid"
+         class="table table-condensed table-striped"
+         hawtio-simple-table="gridOptions">
+  </table>
+</script>
 <div class="simple-controller"
 	ng-controller="DeCentipede.DeCentipedeController">
 
@@ -9,7 +15,8 @@
 						src='../decentipede-web/plugin/inc/img/decentipede-banner.png'>
 				</h3>
 				<h3>
-					JVM Debugging extensions
+					JVM Debugging extensions are <span class="green" ng-hide="!running">RUNNING</span>
+					<span class="red" ng-hide="running">PAUSED</span> :
 					<button class="btn" ng-hide="running" ng-click="start()">
 						<i class="icon-play-circle"></i> Start
 					</button>
@@ -19,19 +26,31 @@
 				</h3>
 			</h2>
 		</div>
-	</div>
-	<div class="row-fluid">
-		<div class="span6">
-			<div class="control-group"></div>
+		<div class="row-fluid">
+			<div class="span6 offset3" simple-form name="attributeViewer"
+				entity='agent' data='table' ng-model="agent"></div>
+
 		</div>
-		<div class="span6 offset3">
-			<div class="centered">
-				<input type="checkbox" ng-model="EmitWalkbacks">Emit
-				walkbacks</input>
+
+		<div class="row-fluid">
+
+			<div class="span6 offset3">
+				<h3>Walkbacks</h3>
+				<ul>
+					<li ng-repeat="walkback in agent.Walkbacks"><a
+						href="../decentipede-web/walkback/{{walkback}}">{{walkback}}</a></li>
+				</ul>
 			</div>
-			<div class="centered">
-				<input type="checkbox" ng-model="NullPointerDiagnosed">Diagnose
-				Nullpointer Exceptions</input>
+		</div>
+		<div class="row-fluid">
+
+			<div class="span6 offset3">
+				<h3>Monitored classes</h3>
+				<ul>
+					<li ng-repeat="monitored in agent.MonitoredClasses">{{monitored}}<a title="Remove this class" href="javascript:removeClass({{monitored}})"><i class="red icon-remove"></i></a></li>
+				</ul>
+				<input ng-model="classToAdd" id="addClass" type="text"
+					typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue">
 			</div>
 		</div>
 	</div>

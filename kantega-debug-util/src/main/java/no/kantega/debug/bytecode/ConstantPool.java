@@ -49,6 +49,7 @@ public class ConstantPool implements ConstantStore {
 		public MethodTypeImpl(ConstantStore resolver, int index) {
 			super(resolver, index);
 		}
+		
 
 	}
 
@@ -67,6 +68,13 @@ public class ConstantPool implements ConstantStore {
 				final int classIndex, final int nameAndTypeIndex) {
 			super(resolver, classIndex, nameAndTypeIndex);
 		}
+		
+		@Override
+		public String toString() {
+
+			return methodReferenceString();
+		}
+
 
 	}
 
@@ -94,6 +102,15 @@ public class ConstantPool implements ConstantStore {
 		public String toString() {
 			return getClassReference() + "." + getNameAndType();
 		}
+		
+		/**
+		 * For methods, convert JNI type names to Java source references
+		 * @return
+		 */
+		protected String methodReferenceString() {
+			return getClassReference() + "." + getNameAndType().getName() + JniTypeToSourceTranslator.javaSignatureFromJni(getNameAndType().getDescriptor());
+		}
+
 
 	}
 
@@ -103,6 +120,12 @@ public class ConstantPool implements ConstantStore {
 		public InterfaceMethodReferenceImpl(ConstantResolver resolver,
 				final int classIndex, final int nameAndTypeIndex) {
 			super(resolver, classIndex, nameAndTypeIndex);
+		}
+		
+		@Override
+		public String toString() {
+
+			return methodReferenceString();
 		}
 
 	}

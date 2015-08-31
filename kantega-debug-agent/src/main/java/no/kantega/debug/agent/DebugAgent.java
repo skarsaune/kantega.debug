@@ -1,18 +1,25 @@
 package no.kantega.debug.agent;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import no.kantega.debug.util.NullPointerHandler;
-import no.kantega.debug.util.Walkback;
 
 import org.slf4j.LoggerFactory;
 
+import com.sun.jdi.Field;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.StringReference;
+import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
@@ -31,7 +38,8 @@ public class DebugAgent implements DebugAgentMBean {
 	private boolean nullPointerDiagnosed=true;
 	private boolean emitWalkbacks=true;
 	final private VirtualMachineProvider provider;
-	private InstanceCounter counter;
+	private final WalkbackPrinter walkbackPrinter=new WalkbackPrinter();
+	private InstanceCounter counter=new InstanceCounter();
 
 	@Override
 	public void setNullPointerDiagnosed(boolean nullPointerDiagnosed) {
@@ -50,6 +58,7 @@ public class DebugAgent implements DebugAgentMBean {
 		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 		try {
 			mbs.registerMBean(this, new ObjectName(DEBUG_AGENT_JMX_NAME));
+			mbs.registerMBean(this.counter, new ObjectName(INSTANCE_COUNTER_JMX_NAME));
 		} catch (Exception e) {
 			LoggerFactory.getLogger(this.getClass()).error(
 					"Unable to register myself in JMX", e);
@@ -65,13 +74,14 @@ public class DebugAgent implements DebugAgentMBean {
 					"Could not start manager as there is no available VM");
 			return;
 		}
+		this.counter.setVirtualMachine(this.vm);
 		if (this.isNullPointerDiagnosed() && vm.canGetBytecodes()
 				&& vm.canGetConstantPool()) {
 
 			nullPointerRequest().enable();
 
 		}
-		getInstanceCounter();
+
 		Executors.newFixedThreadPool(1).execute(new Runnable() {
 
 			@Override
@@ -88,6 +98,7 @@ public class DebugAgent implements DebugAgentMBean {
 			this.nullPointerExceptionRequest = null;
 			this.vm.dispose();
 			this.vm = null;
+			this.counter.setVirtualMachine(null);
 		}
 	}
 
@@ -148,9 +159,44 @@ public class DebugAgent implements DebugAgentMBean {
 
 	private void reportEvent(Event event) {
 		if (event instanceof LocatableEvent && this.isEmitWalkbacks()) {
-			System.out.println(Walkback.printWalkback((LocatableEvent) event));
+			final File walkbackFile = this.walkbackPrinter.printWalkback((LocatableEvent) event);
+			if(walkbackFile.exists() && event instanceof ExceptionEvent) {
+				reportAboutWalkback((ExceptionEvent) event, walkbackFile);
+			}
+			
 		}
 
+	}
+
+	private void reportAboutWalkback(ExceptionEvent event, File walkbackFile) {
+		ObjectReference exception = event.exception();
+
+		
+		try {
+			Field messageField = exception.referenceType().fieldByName(
+					"detailMessage");
+			
+			String messageString=currentMessage(exception, messageField);
+			messageString += " details can be found in walkback " + walkbackFile.getAbsolutePath();
+
+			exception.setValue(
+					messageField,
+					event.virtualMachine()
+							.mirrorOf(messageString));
+		} catch (Exception e) {
+			LoggerFactory.getLogger(this.getClass()).warn("Unable to attach walkback information to exception ", e);
+		} 
+		
+	}
+
+	private String currentMessage(ObjectReference exception, Field messageField) {
+		final Value message = exception.getValue(messageField);
+		if(message instanceof StringReference) {
+			return ((StringReference)message).value();
+		}
+		else {
+			return "";
+		}
 	}
 
 	@Override
@@ -166,24 +212,36 @@ public class DebugAgent implements DebugAgentMBean {
 	@Override
 	public boolean isRunning() {
 		return this.running;
+	}
+
+	@Override
+	public void monitorClass(String className) {
+		this.counter.addClass(className);
+		
+	}
+
+	@Override
+	public List<String> getMonitoredClasses() {
+		
+		return new ArrayList<String>(this.counter.monitoredClasses());
+	}
+
+	@Override
+	public void setMonitoredClasses(List<String> classes) {
+		this.counter.setMonitoredClasses(classes);
+		
+	}
+
+	public WalkbackPrinter getWalkbackPrinter() {
+		return this.walkbackPrinter;
 	}	
 	
+	public String[] getWalkbacks() {
+		return this.getWalkbackPrinter().getWalkbacks();
+	}	
 	
-	private InstanceCounter getInstanceCounter(){
-		if(this.counter==null) {
-			this.counter=new InstanceCounter(this.vm);
-			//also register in JMX
-			try {
-				ManagementFactory.getPlatformMBeanServer().registerMBean(this.counter, new ObjectName(INSTANCE_COUNTER_JMX_NAME));
-			} catch (Exception e) {
-				LoggerFactory.getLogger(this.getClass()).error(
-						"Error registering in JMX", e);
-
-			} 
-			
-		}
-		return this.counter;
+	public Collection<String> candidateClassesForFilter(final String input) {
+		return this.counter.candidateClassesForFilter(input);
 	}
-	
 
 }

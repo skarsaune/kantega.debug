@@ -1,8 +1,11 @@
 package no.kantega.debug.agent;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
 
 import javax.management.Attribute;
 import javax.management.AttributeList;
@@ -24,21 +27,27 @@ import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 
 /**
- * I provide a bridge from Instance informatino in JDI exposed as JMX attributes
+ * I provide a bridge from Instance information in JDI exposed as JMX attributes
  * 
  * @author marska
  *
  */
 public class InstanceCounter implements DynamicMBean {
-	private final VirtualMachine vm;
-	private List<String> attributes = new LinkedList<String>();
-
-	InstanceCounter(final VirtualMachine target) {
-		this.vm = target;
+	private VirtualMachine vm;
+	private Collection<String> attributes = new TreeSet<String>();
+	
+	
+	void setVirtualMachine(final VirtualMachine vm) {
+		this.vm = vm;
 	}
+
 
 	@Override
 	public Object getAttribute(final String className) {
+		
+		if(cannotAccessMemory()) {
+			return -1L;
+		}
 
 		long[] counts = this.vm
 				.instanceCounts(this.vm.classesByName(className));
@@ -77,13 +86,22 @@ public class InstanceCounter implements DynamicMBean {
 				this.getAttributesInfo(), new MBeanConstructorInfo[0],
 				getOperationInfo(), new MBeanNotificationInfo[0]);
 	}
+	
+	public Collection<String> monitoredClasses() {
+		return this.attributes;
+	}
+	
+	public boolean enabled() {
+		return !this.cannotAccessMemory();
+	}
 
 	private MBeanOperationInfo[] getOperationInfo() {
 
 		return new MBeanOperationInfo[] {
 				getMethod("addClass", String.class),
 				getMethod("removeClass", String.class),
-				getMethod("getLoadedClasses")};
+				getMethod("monitoredClasses"),
+				getMethod("enabled")};
 	}
 
 	private MBeanOperationInfo getMethod(String methodName, Class<?> ... classes ) {
@@ -96,7 +114,8 @@ public class InstanceCounter implements DynamicMBean {
 	}
 
 	public boolean addClass(final String className) {
-		return this.attributes.add(className);
+		boolean result = this.attributes.add(className);
+		return result;
 	}
 
 	public boolean removeClass(final String className) {
@@ -104,22 +123,47 @@ public class InstanceCounter implements DynamicMBean {
 	}
 	
 	public String[] getLoadedClasses() {
-		List<String> classes=new LinkedList<String>();
+		if(cannotAccessMemory()) {
+			return new String[]{"Unable to list classes"};
+		}
+		Collection<String> classes = loadedClassesFromJdi();
+		return classes.toArray(new String[classes.size()]);
+	}
+
+
+	private Collection<String> loadedClassesFromJdi() {
+		Collection<String> classes=new TreeSet<String>();
 		List<ReferenceType> loadedClasses = this.vm.allClasses();
-		LoggerFactory.getLogger(this.getClass()).info("VM reports {} loaded classes", loadedClasses.size());
+		LoggerFactory.getLogger(this.getClass()).debug("VM reports {} loaded classes", loadedClasses.size());
 		for (ReferenceType referenceType : loadedClasses) {
 			if(referenceType instanceof ClassType) {
 				classes.add(referenceType.name());
 			}
 		}
-		LoggerFactory.getLogger(this.getClass()).info("Of which {} are classes", loadedClasses.size());
-		return classes.toArray(new String[classes.size()]);
+		LoggerFactory.getLogger(this.getClass()).debug("Of which {} are classes", loadedClasses.size());
+		return classes;
+	}
+	
+	public Collection<String> candidateClassesForFilter(final String filter) {
+		if(filter.length() < 3 || cannotAccessMemory()) {
+			return Arrays.asList(filter);
+		} 
+		else {
+			final String upperCase = filter.toUpperCase();
+			Collection<String> candidates=new TreeSet<String>();
+			for (String aClass : loadedClassesFromJdi()) {
+				if(aClass.toUpperCase().contains(upperCase)){
+					candidates.add(aClass);
+				}			
+			}
+			return candidates;
+		}
 	}
 
 	private MBeanAttributeInfo[] getAttributesInfo() {
-		LoggerFactory.getLogger(this.getClass()).info(
+		LoggerFactory.getLogger(this.getClass()).trace(
 				"Buidling attribute list for " + this.getClass());
-		if (!this.vm.canGetInstanceInfo()) {
+		if (cannotAccessMemory()) {
 			return new MBeanAttributeInfo[0];
 		}
 		final List<MBeanAttributeInfo> attributes = new ArrayList<MBeanAttributeInfo>(
@@ -131,10 +175,14 @@ public class InstanceCounter implements DynamicMBean {
 						false, false));
 
 		}
-		LoggerFactory.getLogger(this.getClass()).info(
+		LoggerFactory.getLogger(this.getClass()).trace(
 				"Using " + attributes.size() + " attributes");
 
 		return attributes.toArray(new MBeanAttributeInfo[attributes.size()]);
+	}
+
+	private boolean cannotAccessMemory() {
+		return this.vm == null || !this.vm.canGetInstanceInfo();
 	}
 
 	@Override
@@ -146,9 +194,8 @@ public class InstanceCounter implements DynamicMBean {
 		}
 		else if("removeClass".equals(actionName)) {
 			return this.removeClass(params[0].toString());
-		}
-		else if("getLoadedClasses".equals(actionName)) {
-			return this.getLoadedClasses();
+		} else if("monitoredClasses".equals(actionName)) {
+			return this.monitoredClasses();
 		}
 		else {
 			throw new UnsupportedOperationException("Unknown operation " + actionName);
@@ -166,6 +213,13 @@ public class InstanceCounter implements DynamicMBean {
 	@Override
 	public AttributeList setAttributes(AttributeList attributes) {
 		throw new UnsupportedOperationException("Can not set attributes");
+	}
+
+
+	public void setMonitoredClasses(List<String> classes) {
+		this.attributes.clear();
+		this.attributes.addAll(classes);
+		
 	}
 
 }
