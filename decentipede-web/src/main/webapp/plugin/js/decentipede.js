@@ -193,6 +193,35 @@ var DeCentipede = (function(DeCentipede) {
 
 			return fromJolokia.value;
 		};
+		
+		function monitorClass(className) {
+			jolokia.request( {
+				type : "exec",
+				operation : "monitorClass(java.lang.String)",
+				arguments: [className],
+				mbean : mbean
+			} );
+			$scope.classToAdd='';
+			Core.$apply($scope);
+		}
+		
+		$scope.stopMonitoringClass = function(className) {
+			jolokia.request( {
+				type : "exec",
+				operation : "stopMonitoringClass(java.lang.String)",
+				arguments: [className],
+				mbean : mbean
+			} );
+
+		}
+		
+		$scope.onSelect = function($item, $model, $label) {
+			monitorClass($item);
+		}
+		
+		$scope.monitorClass = function() {
+			monitorClass($scope.classToAdd);
+		}
 
 		// $scope.gridOptions = {
 		// scope: $scope,
@@ -298,7 +327,7 @@ var DeCentipede = (function(DeCentipede) {
 			//
 			//				
 			// }
-			DeCentipede.log.info(Date.now() + " Updating values from JMX");
+			DeCentipede.log.debug(Date.now() + " Updating values from JMX");
 			$scope.agent = response.value;
 			// split on lines
 //			var classArray = $scope.agent.MonitoredClasses;

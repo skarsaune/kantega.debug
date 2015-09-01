@@ -215,8 +215,8 @@ public class DebugAgent implements DebugAgentMBean {
 	}
 
 	@Override
-	public void monitorClass(String className) {
-		this.counter.addClass(className);
+	public boolean monitorClass(String className) {
+		return this.counter.addClass(className);
 		
 	}
 
@@ -242,6 +242,10 @@ public class DebugAgent implements DebugAgentMBean {
 	
 	public Collection<String> candidateClassesForFilter(final String input) {
 		return this.counter.candidateClassesForFilter(input);
+	}
+	
+	public boolean stopMonitoringClass(final String klass) {
+		return this.counter.removeClass(klass);
 	}
 
 }

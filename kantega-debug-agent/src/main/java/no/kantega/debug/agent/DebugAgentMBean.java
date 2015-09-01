@@ -10,7 +10,9 @@ public interface DebugAgentMBean {
 	
 	void stop();
 	
-	void monitorClass(String className);
+	boolean monitorClass(String className);
+	
+	boolean stopMonitoringClass(String className);
 
 	void setEmitWalkbacks(boolean emitWalkbacks);
 

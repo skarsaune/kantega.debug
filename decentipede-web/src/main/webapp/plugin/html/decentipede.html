@@ -47,10 +47,17 @@
 			<div class="span6 offset3">
 				<h3>Monitored classes</h3>
 				<ul>
-					<li ng-repeat="monitored in agent.MonitoredClasses">{{monitored}}<a title="Remove this class" href="javascript:removeClass({{monitored}})"><i class="red icon-remove"></i></a></li>
+					<li ng-repeat="monitored in agent.MonitoredClasses">{{monitored}}<i
+						tooltip="Remove this class" href="#"
+						ng-click="stopMonitoringClass('{{monitored}}')"
+						class="red icon-remove"></i></li>
 				</ul>
 				<input ng-model="classToAdd" id="addClass" type="text"
-					typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue">
+					typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue"
+					typeahead-min-length="3"
+					typeahead-on-select="onSelect($item, $model, $label)">
+					<i tooltip="Add this class" ng-click="monitorClass()"
+					class="icon-plus"></i>
 			</div>
 		</div>
 	</div>

@@ -114,6 +114,9 @@ public class InstanceCounter implements DynamicMBean {
 	}
 
 	public boolean addClass(final String className) {
+		if(!this.cannotAccessMemory() && this.vm.classesByName(className).isEmpty()) {
+			throw new IllegalArgumentException(className + " is not loaded in this VM");
+		}
 		boolean result = this.attributes.add(className);
 		return result;
 	}
