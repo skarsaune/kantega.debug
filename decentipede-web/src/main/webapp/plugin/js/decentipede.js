@@ -133,11 +133,11 @@ var DeCentipede = (function(DeCentipede) {
 		var loadedClasses = [];
 
 		$scope.table = {
-			tabs : {
-				'Settings' : [ 'EmitWalkbacks', 'NullPointerDiagnosed' ],
-				'Monitoring' : ['MonitoredClasses', 'AddClass' ],
-				'Walkbacks' : []
-			},
+//			tabs : {
+//				'Settings' : [ 'EmitWalkbacks', 'NullPointerDiagnosed' ],
+//				'Monitoring' : ['MonitoredClasses', 'AddClass' ],
+//				'Walkbacks' : []
+//			},
 			properties : {
 				EmitWalkbacks : {
 					label : "Emit walkbacks",
@@ -148,12 +148,13 @@ var DeCentipede = (function(DeCentipede) {
 					label : "Diagnose NullPointerExceptions",
 					tooltip : 'The agent will attempt to enrich NullPointerExceptions with details regarding the cause',
 					type : 'boolean'
-				},
-				MonitoredClasses : {
-					label : "Monitor instances of classes",
-					tooltip : 'Monitor instance counts of these classes',
-					type : 'array',
-					readonly : 'true'
+				}
+//				,
+//				MonitoredClasses : {
+//					label : "Monitor instances of classes",
+//					tooltip : 'Monitor instance counts of these classes',
+//					type : 'array',
+//					readonly : 'true'
 //						,
 //					'input-element' : 'textarea'
 				// 'input-attributes': {
@@ -174,7 +175,7 @@ var DeCentipede = (function(DeCentipede) {
 			 * agent.MonitoredClasses" ng-model="classToRemove"
 			 * title="RemoveClass"></select>' }
 			 */
-			}
+//			}
 		};
 		var lastResult=[];
 		$scope.loadedClasses = function(viewValue) {
