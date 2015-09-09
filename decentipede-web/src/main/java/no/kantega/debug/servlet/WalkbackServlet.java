@@ -26,17 +26,9 @@ public class WalkbackServlet extends HttpServlet {
 		LoggerFactory.getLogger(this.getClass()).info("Registering debug agent in JMX");
 		this.agent=new DebugAgent(new AutomaticDebuggingConnector());
 		LoggerFactory.getLogger(this.getClass()).info(config.getServletContext().getContextPath());
-		this.agent.getWalkbackPrinter().setServletContext(getContextPath(config.getServletContext()));
 		super.init(config);
 	}
 	
-	private String getContextPath(ServletContext context) {
-		String contextPath = context.getContextPath();
-		if (contextPath == null || contextPath.length() == 0) {
-			contextPath = (String) context.getInitParameter("plugin-context");
-		}
-		return contextPath;
-	}
 	
 	@Override
 	public void destroy() {
@@ -65,7 +57,7 @@ public class WalkbackServlet extends HttpServlet {
 		}
 
 
-		response.addHeader("Content-Disposition", "attachment; filename=" + walkbackFile);
+//		response.addHeader("Content-Disposition", "attachment; filename=" + walkbackFile);
 		int length = (int) walkbackFile.length();//these files are quite small
 		response.setContentLength(length);
 
