@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StringReference;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -133,10 +134,10 @@ public class DebugAgent implements DebugAgentMBean {
 			return this.nullPointerExceptionRequest;
 		}
 
+		ReferenceType nullPointerType = vm.classesByName("java.lang.NullPointerException").get(0);
 		this.nullPointerExceptionRequest = vm.eventRequestManager()
 				.createExceptionRequest(
-						vm.classesByName("java.lang.NullPointerException").get(
-								0), true, true);
+						nullPointerType, true, true);
 		nullPointerExceptionRequest
 				.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 
@@ -177,7 +178,7 @@ public class DebugAgent implements DebugAgentMBean {
 					"detailMessage");
 			
 			String messageString=currentMessage(exception, messageField);
-			messageString += " details can be found in walkback " + walkbackFile.getAbsolutePath();
+			messageString += " details can be found in walkback " + walkbackFile.toURI();
 
 			exception.setValue(
 					messageField,

@@ -131,6 +131,8 @@ var DeCentipede = (function(DeCentipede) {
 	DeCentipede.DeCentipedeController = function($scope, jolokia) {
 
 		var loadedClasses = [];
+		
+		$scope.showAddClassControl = false;
 
 		$scope.table = {
 //			tabs : {
@@ -203,6 +205,14 @@ var DeCentipede = (function(DeCentipede) {
 				mbean : mbean
 			} );
 			$scope.classToAdd='';
+			$scope.agent.MonitoredClasses.push(className);
+			$scope.agent.MonitoredClasses.sort();
+			$scope.showAddClassControl=false;
+			Core.$apply($scope);
+		}
+		
+		$scope.showAddClass = function() {
+			$scope.showAddClassControl=true;
 			Core.$apply($scope);
 		}
 		

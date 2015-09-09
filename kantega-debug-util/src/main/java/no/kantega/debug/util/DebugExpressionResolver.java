@@ -8,6 +8,8 @@ import java.util.Map;
 import no.kantega.debug.bytecode.ConstantPool;
 import no.kantega.debug.execution.model.Expression;
 
+import com.sun.jdi.Location;
+
 public class DebugExpressionResolver {
 
 	static class MethodInvocation extends ExpressionBuilder {
@@ -30,7 +32,7 @@ public class DebugExpressionResolver {
 
 
 	static Collection<ExpressionBuilder> allBuilders = Arrays.asList((ExpressionBuilder)new MethodInvocation());
-	static Map<Byte, ExpressionBuilder> expressionBuilders = builderMap(allBuilders);
+	static Map<Byte, ExpressionBuilder> expressionParsers = builderMap(allBuilders);
 
 	static abstract class ExpressionBuilder {
 
@@ -44,11 +46,14 @@ public class DebugExpressionResolver {
 
  
 	
-	public static Expression expressionAtLocation(com.sun.jdi.Location location) {
-		byte[] methodCodes = location.method().bytecodes();
-		int codeIndex = (int) location.codeIndex();//move one message send back
-		ConstantPool constantPool = new ConstantPool(location.declaringType().constantPool());
-		return expressionBuilders.get(methodCodes[codeIndex]).expressionFor(constantPool, methodCodes, codeIndex);
+	public static Expression expressionAtLocation(final Location location) {
+		final byte[] methodCodes = location.method().bytecodes();
+		final int codeIndex = (int) location.codeIndex();
+		final byte currentByteCode = methodCodes[codeIndex];
+		final byte[] poolBytes = location.declaringType().constantPool();
+		final ConstantPool constantPool = new ConstantPool(poolBytes);
+		return expressionParsers.get(currentByteCode).
+				expressionFor(constantPool, methodCodes, codeIndex);
 	}
 
 

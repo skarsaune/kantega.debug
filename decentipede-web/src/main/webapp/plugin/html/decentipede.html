@@ -6,7 +6,6 @@
 </script>
 <div class="simple-controller"
 	ng-controller="DeCentipede.DeCentipedeController">
-
 	<div class="row-fluid">
 		<div class="span6 offset3">
 			<h2>
@@ -26,33 +25,27 @@
 				</h3>
 			</h2>
 		</div>
-		<div class="row-fluid">
-			<h3>Settings</h3>
-			<div class="span6 offset3" simple-form name="attributeViewer"
-				entity='agent' data='table' ng-model="agent"></div>
-
-		</div>
-
-		<div class="row-fluid">
-
-			<div class="span6 offset3">
-				<h3>Walkbacks</h3>
-				<ul>
-					<li ng-repeat="walkback in agent.Walkbacks"><a
-						href="../decentipede-web/walkback/{{walkback}}">{{walkback}}</a></li>
-				</ul>
-			</div>
-		</div>
-		<div class="row-fluid">
-
-			<div class="span6 offset3">
-				<h3>Monitored classes</h3>
-				<ul>
-					<li ng-repeat="monitored in agent.MonitoredClasses">{{monitored}}<i
-						tooltip="Remove this class" href="#"
-						ng-click="stopMonitoringClass('{{monitored}}')"
-						class="red icon-remove"></i></li>
-				</ul>
+	</div>
+	<div class="row-fluid">
+		<div class="span6 offset3">
+			<tabset> <tab heading="Settings">
+			<div simple-form name="attributeViewer" entity='agent' data='table'
+				ng-model="agent"></div>
+			</tab> <tab heading="Walkbacks">
+			<ul>
+				<li ng-repeat="walkback in agent.Walkbacks"><a
+					href="../decentipede-web/walkback/{{walkback}}">{{walkback}}</a></li>
+			</ul>
+			</tab> <tab heading="Monitor Instances">
+			<ul>
+				<li ng-repeat="monitored in agent.MonitoredClasses"><i
+					tooltip="Remove this class" href="#"
+					ng-click="stopMonitoringClass('{{monitored}}')"
+					class="red icon-remove"></i> {{monitored}}</li>
+				<li tooltip="Add class" ng-click="showAddClass()" class="icon-plus"></li>
+			</ul>
+			</tab> </tabset>
+			<div class="ng-hide" ng-show="showAddClassControl">
 				<input ng-model="classToAdd" id="addClass" type="text"
 					typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue"
 					typeahead-min-length="3"
@@ -60,7 +53,7 @@
 					tooltip="Add this class" ng-click="monitorClass()"
 					class="icon-plus"></i>
 			</div>
+
 		</div>
 	</div>
-
 </div>

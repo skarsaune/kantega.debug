@@ -7,6 +7,7 @@ import java.util.Map;
 
 /**
  * I parse and convert type names from JNI names to Java source names
+ * 
  * @author marska
  *
  */
@@ -60,8 +61,10 @@ public class JniTypeToSourceTranslator {
 			}
 			builder.append(types.get(i));
 		}
-		builder.append(") : ");
-		builder.append(types.get(types.size() - 1));
+		if (types.size() > 0) {
+			builder.append(") : ");
+			builder.append(types.get(types.size() - 1));
+		}
 		return builder.toString();
 
 	}

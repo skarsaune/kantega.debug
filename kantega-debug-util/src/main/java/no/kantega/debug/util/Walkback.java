@@ -1,5 +1,7 @@
 package no.kantega.debug.util;
 
+import java.util.Collections;
+
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Method;
@@ -17,7 +19,9 @@ public class Walkback {
 			for(StackFrame frame : event.thread().frames()) {
 				printFrame(frame, builder);
 			}
+			ensureThreadIsResumed(event);			
 			return builder.toString();
+
 
 		} catch (Exception e) {
 			return "unable to print stack trace: " + e;
@@ -25,11 +29,21 @@ public class Walkback {
 		
 	}
 
+	/**
+	 * In case we have piled up too many suspend requests, ensure thread is resumed
+	 * @param event
+	 */
+	private static void ensureThreadIsResumed(LocatableEvent event) {
+		while(event.thread().suspendCount() > 0) {
+			event.thread().resume();
+		}
+	}
+
 	private static void printFrame(StackFrame frame, StringBuilder builder) {
 		final Method method = frame.location().method();
 
 		ObjectReference thisObject = frame.thisObject();
-		builder.append(" at ").append(method.declaringType().name()).append('.').append(method.name()).append('(');
+		builder.append("\n at ").append(method.declaringType().name()).append('.').append(method.name()).append('(');
 		if(sourceName(frame) != null) {
 			builder.append(sourceName(frame));
 		}
@@ -82,18 +96,22 @@ public class Walkback {
 
 	private static void appendObject(final String name, ObjectReference object, ThreadReference thread,
 			StringBuilder builder) {
-		builder.append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")\n");
+		builder.append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")");
+//		builder.append(" = ");
+//		printObject(object, thread);
 	}
 
-//	private static Object printObject(ObjectReference object, ThreadReference thread) {
-//		Method method = object.virtualMachine().classesByName("java.lang.Object").get(0).methodsByName("toString").get(0);
-//		try {
-//			thread.suspend();
-//			Value asString = object.invokeMethod(thread, method, Collections.EMPTY_LIST, ObjectReference.INVOKE_SINGLE_THREADED);
-//			return asString.toString();
-//		} catch (Exception e) {
-//			return "Unable to print";
-//		} 
-//	}
+	private static Object printObject(ObjectReference object, ThreadReference thread) {
+		Method method = object.virtualMachine().classesByName("java.lang.Object").get(0).methodsByName("toString").get(0);
+		try {
+			if(thread.suspendCount()<2) {//increase suspendcount to ensure that thread does not resume after invoking method
+				thread.suspend();
+			}
+			Value asString = object.invokeMethod(thread, method, Collections.EMPTY_LIST, ObjectReference.INVOKE_SINGLE_THREADED);
+			return asString.toString();
+		} catch (Exception e) {
+			return "Unable to print";
+		} 
+	}
 	
 }

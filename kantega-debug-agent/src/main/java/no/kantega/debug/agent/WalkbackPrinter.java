@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,8 +22,6 @@ public class WalkbackPrinter {
 	private static AtomicInteger seqNo = new AtomicInteger();
 	private File walkbackFolder = new File(System.getProperty(
 			"walkback.folder", "walkback"));
-	private String servletContext;
-
 	public static String nextWalkbackName() {
 		return FORMATTER.format(new Date()) + seqNo.incrementAndGet()
 				+ ".walkback";
@@ -44,21 +44,20 @@ public class WalkbackPrinter {
 	}
 	
 	public String[] getWalkbacks() {
-		return walkbackFolder.list(new FilenameFilter() {
+		String[] walkbacks = walkbackFolder.list(new FilenameFilter() {
 			
 			@Override
 			public boolean accept(File folder, String fileName) {
 				return fileName.endsWith(".walkback");
 			}
 		});
+		//show latest first
+		Arrays.sort(walkbacks, Collections.reverseOrder());
+		return walkbacks;
 	}
 	
 	public File getWalkbackFile(final String fileName) {
 		return new File(walkbackFolder, fileName); 	
 	}
 
-	public void setServletContext(String contextPath) {
-		this.servletContext = contextPath;
-		
-	}
 }

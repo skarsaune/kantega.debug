@@ -42,7 +42,7 @@ public class DeadlockDetector {
 
 	}
 	
-	private static boolean isDeadLocked(final ThreadReference threadReference, final Set<ThreadReference> recursionSet) {
+	public static boolean isDeadLocked(final ThreadReference threadReference, final Set<ThreadReference> recursionSet) {
 		if(threadReference == null){//monitor chain broken
 			return false;
 		}
