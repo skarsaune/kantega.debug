@@ -96,7 +96,7 @@ public class Walkback {
 
 	private static void appendObject(final String name, ObjectReference object, ThreadReference thread,
 			StringBuilder builder) {
-		builder.append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")");
+		builder.append(name).append(" = ").append(object.type().name()).append("(Id=").append(object.uniqueID()).append(")\n");
 //		builder.append(" = ");
 //		printObject(object, thread);
 	}
