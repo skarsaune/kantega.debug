@@ -20,6 +20,7 @@ import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StringReference;
+import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.event.Event;
@@ -97,9 +98,11 @@ public class DebugAgent implements DebugAgentMBean {
 		this.running = false;
 		if (vm != null) {
 			this.nullPointerExceptionRequest = null;
-			this.vm.dispose();
+			final VirtualMachine beingDisconnected = this.vm;
 			this.vm = null;
 			this.counter.setVirtualMachine(null);
+			beingDisconnected.dispose();
+
 		}
 	}
 
@@ -121,7 +124,12 @@ public class DebugAgent implements DebugAgentMBean {
 				while (events.hasNext()) {
 					handleEvent(events.next());
 				}
-			} catch (Exception e) {
+			} catch (VMDisconnectedException e) {
+				LoggerFactory.getLogger(this.getClass()).error("VM has been disconnected, shutting down agent!");
+				this.stop();
+			} 
+			
+			catch (Exception e) {
 				LoggerFactory.getLogger(this.getClass()).error(
 						"Error occurred processing debug events", e);
 
@@ -170,11 +178,11 @@ public class DebugAgent implements DebugAgentMBean {
 	}
 
 	private void reportAboutWalkback(ExceptionEvent event, File walkbackFile) {
-		ObjectReference exception = event.exception();
+		final ObjectReference exception = event.exception();
 
 		
 		try {
-			Field messageField = exception.referenceType().fieldByName(
+			final Field messageField = exception.referenceType().fieldByName(
 					"detailMessage");
 			
 			String messageString=currentMessage(exception, messageField);

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.ClassType;
 import com.sun.jdi.ReferenceType;
+import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 
 /**
@@ -48,10 +49,15 @@ public class InstanceCounter implements DynamicMBean {
 		if(cannotAccessMemory()) {
 			return -1L;
 		}
-
+		try {
 		long[] counts = this.vm
 				.instanceCounts(this.vm.classesByName(className));
 		return sum(counts);
+		}
+		catch (VMDisconnectedException e) {
+			this.vm=null;
+			return -1L;
+		}
 	}
 
 	/**
