@@ -67,6 +67,18 @@ public class DebugAgent implements DebugAgentMBean {
 		}
 
 	}
+	
+	private void unregisterMyself() {
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		try {
+			mbs.unregisterMBean(new ObjectName(DEBUG_AGENT_JMX_NAME));
+			mbs.unregisterMBean(new ObjectName(INSTANCE_COUNTER_JMX_NAME));
+		} catch (Exception e) {
+			LoggerFactory.getLogger(this.getClass()).error(
+					"Unable to unregister myself in JMX", e);
+		}
+
+	}
 
 	public void start() throws InterruptedException, IOException {
 		this.vm = this.provider.virtualMachine();
@@ -139,7 +151,7 @@ public class DebugAgent implements DebugAgentMBean {
 
 	private ExceptionRequest nullPointerRequest() {
 		if (this.nullPointerExceptionRequest != null) {
-			return this.nullPointerExceptionRequest;
+			return this.nullPointerExceptionRequest;  
 		}
 
 		ReferenceType nullPointerType = vm.classesByName("java.lang.NullPointerException").get(0);
@@ -169,7 +181,7 @@ public class DebugAgent implements DebugAgentMBean {
 	private void reportEvent(Event event) {
 		if (event instanceof LocatableEvent && this.isEmitWalkbacks()) {
 			final File walkbackFile = this.walkbackPrinter.printWalkback((LocatableEvent) event);
-			if(walkbackFile.exists() && event instanceof ExceptionEvent) {
+			if(event instanceof ExceptionEvent) {
 				reportAboutWalkback((ExceptionEvent) event, walkbackFile);
 			}
 			
@@ -179,6 +191,7 @@ public class DebugAgent implements DebugAgentMBean {
 
 	private void reportAboutWalkback(ExceptionEvent event, File walkbackFile) {
 		final ObjectReference exception = event.exception();
+		LoggerFactory.getLogger(this.getClass()).warn("Attaching walkback information to exception {}", exception);
 
 		
 		try {
@@ -255,6 +268,11 @@ public class DebugAgent implements DebugAgentMBean {
 	
 	public boolean stopMonitoringClass(final String klass) {
 		return this.counter.removeClass(klass);
+	}
+
+	public void deregister() {
+		this.unregisterMyself();
+		
 	}
 
 }
