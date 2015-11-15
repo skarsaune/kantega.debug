@@ -325,6 +325,10 @@ var DeCentipede = (function(DeCentipede) {
 		$scope.start = function() {
 			callOperation("start()");
 		};
+		
+		$scope.install = function() {
+			DeCentipede.log.error("Install agent not implemented");
+		};
 
 		// register a watch with jolokia on this mbean to
 		// get updated metrics

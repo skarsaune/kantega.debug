@@ -17,8 +17,8 @@
 					JVM Debugging extensions are <span class="green" ng-hide="!agentAvailable || !running">RUNNING</span>
 					<span class="red" ng-hide="!agentAvailable || running">PAUSED</span> 
 					<span class="red" ng-hide="agentAvailable">NOT INSTALLED</span>:
-					<button class="btn" ng-hide="agentAvailable" ng-click="start()">
-						<i class="icon-play-circle"></i> Install
+					<button class="btn" ng-hide="agentAvailable" ng-click="install()">
+						<i class="icon-download"></i> Install
 					</button>
 					<button class="btn" ng-hide="!agentAvailable || !running" ng-click="pause()">
 						<i class="icon-pause"></i> Pause
