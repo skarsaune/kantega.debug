@@ -1,3 +1,5 @@
+package no.kantega.debug.inprocess.connect.test;
+
 import static org.junit.Assert.*;
 
 import java.io.IOException;
@@ -12,7 +14,7 @@ public class AutomaticConnectorTest {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		assertNotNull("VM should not be Null" , new AutomaticDebuggingConnector().virtualMachine());
+		Assert.assertNotNull("VM should not be Null", new AutomaticDebuggingConnector().virtualMachine());
 	}
 
 }
