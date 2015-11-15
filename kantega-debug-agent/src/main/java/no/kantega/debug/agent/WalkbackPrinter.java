@@ -46,7 +46,6 @@ public class WalkbackPrinter {
 	public String[] getWalkbacks() {
 		String[] walkbacks = walkbackFolder.list(new FilenameFilter() {
 			
-			@Override
 			public boolean accept(File folder, String fileName) {
 				return fileName.endsWith(".walkback");
 			}

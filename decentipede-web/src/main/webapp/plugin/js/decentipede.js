@@ -6,6 +6,8 @@
  * 
  */
 var DeCentipede = (function(DeCentipede) {
+	
+	var jmxDomain = "no.kantega.debug";
 
 	/**
 	 * @property pluginName
@@ -106,7 +108,7 @@ var DeCentipede = (function(DeCentipede) {
 			content : "DeCentipede",
 			title : "Java debug agent",
 			isValid : function(workspace) {
-				return true;
+				return true; //workspace.treeContainsDomainAndProperties(jmxDomain);
 			},
 			href : function() {
 				return "#/decentipede";
@@ -133,6 +135,8 @@ var DeCentipede = (function(DeCentipede) {
 		var loadedClasses = [];
 		
 		$scope.showAddClassControl = false;
+		
+		$scope.agentAvailable = false; //workspace.treeContainsDomainAndProperties(jmxDomain);
 
 		$scope.table = {
 //			tabs : {
@@ -328,11 +332,15 @@ var DeCentipede = (function(DeCentipede) {
 			type : 'read',
 			mbean : mbean,
 			arguments : []
-		}, onSuccess(renderCentipede));
+		}, onSuccess(renderCentipede), agentMissing);
 
+		function agentMissing(response) {
+			DeCentipede.log.error("agent not available " + response);
+		}
 
 		function renderCentipede(response) {
 			isSettingUi = true;
+			$scope.agentAvailable = true; //workspace.treeContainsDomainAndProperties(jmxDomain);
 			// for (index = 0; index < mirroredAttributes.length; index++) {
 			// var attribute = mirroredAttributes[index];
 			//

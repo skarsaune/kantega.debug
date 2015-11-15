@@ -1,58 +1,103 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>kantega.debug</groupId>
-		<artifactId>kantega.debug</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
-	</parent>
-	<artifactId>decentipede-web</artifactId>
-	<packaging>war</packaging>
-	
-	  <properties>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>kantega.debug</groupId>
+        <artifactId>kantega.debug</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>decentipede-web</artifactId>
+    <packaging>war</packaging>
 
-  </properties>
+    <properties>
 
-	<dependencies>
-		<dependency>
-			<groupId>kantega.debug</groupId>
-			<artifactId>kantega-debug-agent</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.5</version>
-			<scope>provided</scope>
-		</dependency>
-		    <dependency>
-      <groupId>io.hawt</groupId>
-      <artifactId>hawtio-plugin-mbean</artifactId>
-      <version>2.0.0</version>
-    </dependency>
 
-	</dependencies>
+    </properties>
 
-	<build>
-		<plugins>
+    <pluginRepositories>
+        <pluginRepository>
+            <id>apache.snapshots</id>
+            <url>http://repository.apache.org/snapshots/</url>
+        </pluginRepository>
+    </pluginRepositories>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<forkCount>1</forkCount>
-					<reuseForks>true</reuseForks>
-					<argLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=3456</argLine>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.jetty</groupId>
-				<artifactId>jetty-maven-plugin</artifactId>
-				<version>9.2.7.v20150116</version>
-			</plugin>
-			
 
-		</plugins>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>9.2.9.v20150224</version>
+                <configuration>
+<!--                     <webApp> -->
+<!--                         <contextPath>/decentipede-web</contextPath> -->
+<!--                     </webApp> -->
+<!--                     <contextHandlers> -->
+<!--                         <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext"> -->
+<!--                             <contextPath>/hawtio-web</contextPath> -->
+<!--                             <war> -->
+<!--                                 /Users/marska/.m2/repository/io/hawt/hawtio-default-offline/1.5-SNAPSHOT/hawtio-default-offline-1.5-SNAPSHOT.war -->
+<!--                             </war> -->
+<!--                         </contextHandler> -->
+<!--                     </contextHandlers> -->
+                </configuration>
 
-	</build>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.3-SNAPSHOT</version>
+                <configuration>
+                    <!--<additionalClasspathDirs>-->
+                        <!--<additionalClasspathDir>${java.home}/../lib/tools.jar</additionalClasspathDir>-->
+                    <!--</additionalClasspathDirs>-->
+                    <webapps>
+                        <webapp>
+                            <groupId>io.hawt</groupId>
+                            <artifactId>hawtio-default-offline</artifactId>
+                            <version>1.5-SNAPSHOT</version>
+                            <type>war</type>
+                            <contextPath>/hawtio</contextPath>
+                        </webapp>
+                    </webapps>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>kantega.debug</groupId>
+            <artifactId>kantega-debug-agent</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+            <version>2.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.hawt</groupId>
+            <artifactId>hawtio-plugin-mbean</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+
+        <!-- for jetty run -->
+        <dependency>
+            <groupId>io.hawt</groupId>
+            <artifactId>hawtio-default-offline</artifactId>
+            <version>1.5-SNAPSHOT</version>
+            <type>war</type>
+<!--             <scope>test</scope> -->
+        </dependency>
+        <dependency>
+            <groupId>com.sun</groupId>
+            <artifactId>tools</artifactId>
+            <version>${java.version}</version>
+            <scope>system</scope>
+            <systemPath>${java.home}/../lib/tools.jar</systemPath>
+        </dependency>
+    </dependencies>
+
 
 </project>

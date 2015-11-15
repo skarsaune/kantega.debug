@@ -16,7 +16,6 @@ public class PluginContextListener implements ServletContextListener {
 
   HawtioPlugin plugin = null;
 
-  @Override
   public void contextInitialized(ServletContextEvent servletContextEvent) {
 
     ServletContext context = servletContextEvent.getServletContext();
@@ -39,7 +38,6 @@ public class PluginContextListener implements ServletContextListener {
 		return contextPath;
 	}
 
-  @Override
   public void contextDestroyed(ServletContextEvent servletContextEvent) {
     plugin.destroy();
     LOG.info("Destroyed {} plugin", plugin.getName());

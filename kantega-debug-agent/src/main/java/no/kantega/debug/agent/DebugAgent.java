@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import no.kantega.debug.agent.jvm.InstallAgent;
 import no.kantega.debug.util.NullPointerHandler;
 
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,6 @@ public class DebugAgent implements DebugAgentMBean {
 	private final WalkbackPrinter walkbackPrinter=new WalkbackPrinter();
 	private InstanceCounter counter=new InstanceCounter();
 
-	@Override
 	public void setNullPointerDiagnosed(boolean nullPointerDiagnosed) {
 		this.nullPointerDiagnosed = nullPointerDiagnosed;
 		nullPointerRequest().setEnabled(nullPointerDiagnosed);
@@ -98,7 +98,6 @@ public class DebugAgent implements DebugAgentMBean {
 
 		Executors.newFixedThreadPool(1).execute(new Runnable() {
 
-			@Override
 			public void run() {
 				runEventLoop();
 
@@ -118,7 +117,6 @@ public class DebugAgent implements DebugAgentMBean {
 		}
 	}
 
-	@Override
 	public boolean isNullPointerDiagnosed() {
 		return this.nullPointerDiagnosed;
 	}
@@ -137,7 +135,7 @@ public class DebugAgent implements DebugAgentMBean {
 					handleEvent(events.next());
 				}
 			} catch (VMDisconnectedException e) {
-				LoggerFactory.getLogger(this.getClass()).error("VM has been disconnected, shutting down agent!");
+				LoggerFactory.getLogger(this.getClass()).error("VM has been disconnected, shutting down agent!", e);
 				this.stop();
 			} 
 			
@@ -221,34 +219,32 @@ public class DebugAgent implements DebugAgentMBean {
 		}
 	}
 
-	@Override
 	public boolean isEmitWalkbacks() {
 		return this.emitWalkbacks;
 	}
 
-	@Override
 	public void setEmitWalkbacks(boolean emitWalkbacks) {
 		this.emitWalkbacks = emitWalkbacks;
 	}
 
-	@Override
 	public boolean isRunning() {
 		return this.running;
 	}
 
-	@Override
+	public void installAgent(int pid) throws Exception{
+		InstallAgent.installAgent(pid);
+	}
+
 	public boolean monitorClass(String className) {
 		return this.counter.addClass(className);
 		
 	}
 
-	@Override
 	public List<String> getMonitoredClasses() {
 		
 		return new ArrayList<String>(this.counter.monitoredClasses());
 	}
 
-	@Override
 	public void setMonitoredClasses(List<String> classes) {
 		this.counter.setMonitoredClasses(classes);
 		
@@ -274,5 +270,4 @@ public class DebugAgent implements DebugAgentMBean {
 		this.unregisterMyself();
 		
 	}
-
 }

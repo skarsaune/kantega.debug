@@ -43,7 +43,6 @@ public class InstanceCounter implements DynamicMBean {
 	}
 
 
-	@Override
 	public Object getAttribute(final String className) {
 		
 		if(cannotAccessMemory()) {
@@ -74,7 +73,6 @@ public class InstanceCounter implements DynamicMBean {
 		return sum;
 	}
 
-	@Override
 	public AttributeList getAttributes(String[] attributes) {
 		final AttributeList attributeList = new AttributeList(attributes.length);
 		for (String attributeName : attributes) {
@@ -85,7 +83,6 @@ public class InstanceCounter implements DynamicMBean {
 
 	}
 
-	@Override
 	public MBeanInfo getMBeanInfo() {
 		return new MBeanInfo("DebugInstanceCounter",
 				"MBean bridge to instance counts in JDI",
@@ -194,7 +191,6 @@ public class InstanceCounter implements DynamicMBean {
 		return this.vm == null || !this.vm.canGetInstanceInfo();
 	}
 
-	@Override
 	public Object invoke(String actionName, Object[] params, String[] signature)
 			throws MBeanException, ReflectionException {
 		if("addClass".equals(actionName)) {
@@ -211,7 +207,6 @@ public class InstanceCounter implements DynamicMBean {
 		}
 	}
 
-	@Override
 	public void setAttribute(Attribute attribute)
 			throws AttributeNotFoundException, InvalidAttributeValueException,
 			MBeanException, ReflectionException {
@@ -219,7 +214,6 @@ public class InstanceCounter implements DynamicMBean {
 
 	}
 
-	@Override
 	public AttributeList setAttributes(AttributeList attributes) {
 		throw new UnsupportedOperationException("Can not set attributes");
 	}

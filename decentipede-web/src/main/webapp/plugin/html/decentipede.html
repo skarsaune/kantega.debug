@@ -14,19 +14,24 @@
 						src='../decentipede-web/plugin/inc/img/decentipede-banner.png'>
 				</h3>
 				<h3>
-					JVM Debugging extensions are <span class="green" ng-hide="!running">RUNNING</span>
-					<span class="red" ng-hide="running">PAUSED</span> :
-					<button class="btn" ng-hide="running" ng-click="start()">
-						<i class="icon-play-circle"></i> Start
+					JVM Debugging extensions are <span class="green" ng-hide="!agentAvailable || !running">RUNNING</span>
+					<span class="red" ng-hide="!agentAvailable || running">PAUSED</span> 
+					<span class="red" ng-hide="agentAvailable">NOT INSTALLED</span>:
+					<button class="btn" ng-hide="agentAvailable" ng-click="start()">
+						<i class="icon-play-circle"></i> Install
 					</button>
-					<button class="btn" ng-hide="!running" ng-click="pause()">
+					<button class="btn" ng-hide="!agentAvailable || !running" ng-click="pause()">
 						<i class="icon-pause"></i> Pause
 					</button>
+					<button class="btn" ng-hide="!agentAvailable || running" ng-click="start()">
+						<i class="icon-play-circle"></i> Start
+					</button>
+					
 				</h3>
 			</h2>
 		</div>
 	</div>
-	<div class="row-fluid">
+	<div class="row-fluid" ng-hide="!agentAvailable">
 		<div class="span6 offset3">
 			<tabset> <tab heading="Settings">
 			<div simple-form name="attributeViewer" entity='agent' data='table'

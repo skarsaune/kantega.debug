@@ -17,7 +17,6 @@ public class DebuggingConnector {
 
 		new DebugAgent(new VirtualMachineProvider() {
 
-			@Override
 			public VirtualMachine virtualMachine() {
 				try {
 					Connection connection = new SocketTransportService().attach(

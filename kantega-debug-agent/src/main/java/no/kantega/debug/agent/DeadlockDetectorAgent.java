@@ -26,7 +26,6 @@ public class DeadlockDetectorAgent implements DeadlockDetectorMBean {
 	private VirtualMachine vm;
 	private ObjectReference terminateException;
 
-	@Override
 	public List<String> deadLockedThreads() {
 		checkState();
 		List<ThreadReference> deadlockedThreads = DeadlockDetector
@@ -39,7 +38,6 @@ public class DeadlockDetectorAgent implements DeadlockDetectorMBean {
 		return threadNames;
 	}
 
-	@Override
 	public String waitingForThread(String threadName) {
 		checkState();
 
@@ -121,7 +119,6 @@ public class DeadlockDetectorAgent implements DeadlockDetectorMBean {
 		return createException(threadReference, "java.lang.RuntimeException");
 	}
 
-	@Override
 	public boolean enabled() {
 
 		return this.vm != null && this.vm.canGetCurrentContendedMonitor()

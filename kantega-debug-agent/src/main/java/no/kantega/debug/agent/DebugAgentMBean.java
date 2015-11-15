@@ -27,6 +27,8 @@ public interface DebugAgentMBean {
 	void setNullPointerDiagnosed(boolean nullPointerDiagnosed);
 	
 	boolean isRunning();
+
+	void installAgent(int pid) throws Exception;
 	
 	String[] getWalkbacks();
 	

@@ -1,13 +1,10 @@
 package no.kantega.debug.inprocess.connect.test;
 
-import static org.junit.Assert.*;
+import no.kantega.debug.inprocess.connect.AutomaticDebuggingConnector;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.IOException;
-
-import junit.framework.Assert;
-import no.kantega.debug.inprocess.connect.AutomaticDebuggingConnector;
-
-import org.junit.Test;
 
 
 public class AutomaticConnectorTest {
