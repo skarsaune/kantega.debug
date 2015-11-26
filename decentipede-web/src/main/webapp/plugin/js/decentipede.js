@@ -130,7 +130,7 @@ var DeCentipede = (function(DeCentipede) {
 	 * hawtioCore
 	 * 
 	 */
-	DeCentipede.DeCentipedeController = function($scope, jolokia) {
+	DeCentipede.DeCentipedeController = function($scope, jolokia, $http) {
 
 		var loadedClasses = [];
 		
@@ -327,8 +327,24 @@ var DeCentipede = (function(DeCentipede) {
 		};
 		
 		$scope.install = function() {
-			DeCentipede.log.error("Install agent not implemented");
+			var url='../decentipede-web/install?pid=' + findMyPid();
+			$http({
+				  method: 'POST',
+				  url: url
+				}).then(function successCallback(response) {
+				    DeCentipede.log.info('Installed agent');
+				  }, function errorCallback(response) {
+				    DeCentipede.log.info('Failure installing agent: ' + response);
+				  });
+
 		};
+
+		function findMyPid() {
+			//TODO: Semi dirty to snatch this from the title, should ideally have a backup plan
+			var regex=/pid:(\d+)/g;
+			var pid = regex.exec(window.document.title);
+			return pid[1];
+		}
 
 		// register a watch with jolokia on this mbean to
 		// get updated metrics

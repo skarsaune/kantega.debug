@@ -109,7 +109,7 @@ public class AutomaticDebuggingConnector implements VirtualMachineProvider {
 		}
 		String pidString = processName.substring(0, attIndex);
 		
-		setUpDebuggerIfRequrired(pidString);
+//		setUpDebuggerIfRequrired(pidString);
 
 		ProcessAttachingConnector connector = new ProcessAttachingConnector();
 		final Map<String, Argument> arguments = connector.defaultArguments();

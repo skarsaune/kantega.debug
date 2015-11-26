@@ -20,11 +20,6 @@
 		<param-value>decentipede</param-value>
 	</context-param>
 
-	<context-param>
-		<description>Plugin's path on the server</description>
-		<param-name>plugin-domain</param-name>
-		<param-value></param-value>
-	</context-param>
 
 	<context-param>
 		<description>Plugin's path on the server</description>
@@ -38,12 +33,21 @@
 		<load-on-startup>1</load-on-startup>
 
 	</servlet>
+	<servlet>
+		<servlet-name>InstallAgentServlet</servlet-name>
+		<servlet-class>no.kantega.debug.servlet.InstallAgentServlet</servlet-class>
+
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>InstallAgentServlet</servlet-name>
+		<url-pattern>/install</url-pattern>
+	</servlet-mapping>
 
 	<servlet-mapping>
 		<servlet-name>WalkbackServlet</servlet-name>
 		<url-pattern>/walkback/*</url-pattern>
 	</servlet-mapping>
-
 
 	<listener>
 		<listener-class>no.kantega.debug.hawt.plugin.PluginContextListener</listener-class>

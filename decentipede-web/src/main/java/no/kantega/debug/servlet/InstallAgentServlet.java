@@ -32,11 +32,11 @@ public class InstallAgentServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest req, HttpServletResponse response)
 			throws ServletException, IOException {
 		
-		final String requestString = req.getReader().readLine();
+		final String pid = req.getParameter("pid");
 		try {
-			this.agent.installAgent(Integer.valueOf(requestString));
+			this.agent.installAgent(Integer.valueOf(pid));
 		}  catch (Exception e) {
-			LoggerFactory.getLogger(this.getClass()).error("Error starting agent in JVM with PID {}", requestString);
+			LoggerFactory.getLogger(this.getClass()).error("Error starting agent in JVM with PID {}", pid);
 			e.printStackTrace();
 		}
 		response.setContentType("text/plain");

@@ -36,8 +36,12 @@ public class DecentipedeJvmAgent {
     }
 
 	private static DebugAgent startAgent() {
+		if("true".equalsIgnoreCase(System.getProperty("decentipede.installed", "false"))) {
+			LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Decentipede JVM agent is already installed");
+		}
 		LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Installing Decentipede JVM agent");
 		agent = new DebugAgent(new AutomaticDebuggingConnector());
+		System.setProperty("decentipede.installed", "true");
 		LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Decentipede JVM agent installed and registered in JMX");
 		return agent;
 	}

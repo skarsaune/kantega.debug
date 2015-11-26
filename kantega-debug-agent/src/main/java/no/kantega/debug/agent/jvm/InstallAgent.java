@@ -44,9 +44,9 @@ public class InstallAgent {
             } else {
 
                 final String agentPath = getMyJar().toString();
-                logger.info("Installing Decentipede JVM agent witn path: {}", pid);
+                logger.info("Installing Decentipede JVM agent witn path: {} in JVM with pid: {}", agentPath, pid);
                 vm.loadAgent(agentPath, "decentipede.installed");
-                setUpDebuggerIfRequrired(vm);
+//                setUpDebuggerIfRequrired(vm);
             }
         } finally {
             try {
