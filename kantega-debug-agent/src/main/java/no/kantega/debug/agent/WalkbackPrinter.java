@@ -50,6 +50,10 @@ public class WalkbackPrinter {
 				return fileName.endsWith(".walkback");
 			}
 		});
+		//not extistant or empty folder
+		if(walkbacks == null) {
+			return new String[0];
+		}
 		//show latest first
 		Arrays.sort(walkbacks, Collections.reverseOrder());
 		return walkbacks;
