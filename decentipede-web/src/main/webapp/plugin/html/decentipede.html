@@ -38,8 +38,8 @@
 				ng-model="agent"></div>
 			</tab> <tab heading="Walkbacks">
 			<ul>
-				<li ng-repeat="walkback in agent.Walkbacks"><a
-					href="../decentipede-web/walkback/{{walkback}}">{{walkback}}</a></li>
+				<li ng-repeat="walkback in agent.Walkbacks"
+					><a href="" ng-click="showWalkback('{{walkback}}')">{{walkback}}</a></li>
 			</ul>
 			</tab> <tab heading="Monitor Instances">
 			<ul>

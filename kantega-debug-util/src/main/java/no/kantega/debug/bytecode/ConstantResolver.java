@@ -17,4 +17,10 @@ public interface ConstantResolver {
 	 * @return Total number of constants (up to highest index)
 	 */
 	int constantCount();
+	
+	/**
+	 * @param representation String representation of the constant we want the index of
+	 *@return Get the constant pool index of the constant, -1 if not found 
+	 */
+	int indexOfConstantPrintedAs(String representation);
 }

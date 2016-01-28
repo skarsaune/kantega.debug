@@ -1,6 +1,9 @@
 package no.kantega.debug.agent;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -61,6 +64,15 @@ public class WalkbackPrinter {
 	
 	public File getWalkbackFile(final String fileName) {
 		return new File(walkbackFolder, fileName); 	
+	}
+
+	public String getWalkback(String walkback) throws IOException {
+		final File walkbackFile = getWalkbackFile(walkback);
+		final FileInputStream fis = new FileInputStream(walkbackFile);
+		byte[] buffer = new byte[(int)walkbackFile.length()];
+		fis.read(buffer);
+		fis.close();
+		return new String(buffer);
 	}
 
 }

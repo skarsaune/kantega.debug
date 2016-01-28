@@ -24,18 +24,17 @@ public class NullPointerHandler {
 			}
 			Field messageField = exception.referenceType().fieldByName(
 					"detailMessage");
-			//if message is already set, leave it
-			if(exception.getValue(messageField) != null){
+			// if message is already set, leave it
+			if (exception.getValue(messageField) != null) {
 				return false;
 			}
-			Expression expression = DebugExpressionResolver
+			final Object expression = DebugExpressionResolver
 					.expressionAtLocation(event.location());
-			exception.setValue(
-					messageField,
-					event.virtualMachine()
-							.mirrorOf(
-									" occured invoking "
-											+ expression));
+			if (expression != null) {
+				exception.setValue(messageField, event.virtualMachine()
+						.mirrorOf(" occured invoking " + expression));
+
+			}
 			return true;
 		} catch (Exception e) {
 			System.err
@@ -46,5 +45,4 @@ public class NullPointerHandler {
 
 		}
 	}
-
 }

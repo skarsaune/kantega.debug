@@ -230,6 +230,10 @@ var DeCentipede = (function(DeCentipede) {
 
 		}
 		
+		$scope.showWalkback = function(walkback) {
+			alert(walkback);
+		}
+		
 		$scope.onSelect = function($item, $model, $label) {
 			monitorClass($item);
 		}

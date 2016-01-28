@@ -1,59 +1,91 @@
 package no.kantega.debug.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Collections;
 
-import no.kantega.debug.bytecode.ConstantPool;
-import no.kantega.debug.execution.model.Expression;
+import no.kantega.debug.bytecode.JniTypeToSourceTranslator;
+
+import org.jetbrains.java.decompiler.code.CodeConstants;
+import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.struct.consts.LinkConstant;
 
 import com.sun.jdi.Location;
+import com.sun.jdi.ReferenceType;
 
 public class DebugExpressionResolver {
 
-	static class MethodInvocation extends ExpressionBuilder {
-
-		@Override
-		public Expression expressionFor(ConstantPool constantPool,
-				byte[] methodCodes, int currentIndex) {
-			return 	(Expression) constantPool.getConstant(methodCodes[currentIndex+2]);
-		}
-
-		@Override
-		public byte[] supportsByteCodes() {
-			
-			return new byte[]{-71, -74};
-		}
-
-	}
-
-
-
-
-	static Collection<ExpressionBuilder> allBuilders = Arrays.asList((ExpressionBuilder)new MethodInvocation());
-	static Map<Byte, ExpressionBuilder> expressionParsers = builderMap(allBuilders);
-
-	static abstract class ExpressionBuilder {
-
-		public abstract Expression expressionFor(ConstantPool constantPool,
-				byte[] methodCodes, int currentIndex);
-		
-		public abstract byte[] supportsByteCodes();
-
-	}
+//	static class MethodInvocation extends ExpressionBuilder {
+//
+//		@Override
+//		public Expression expressionFor(ConstantPool constantPool,
+//				byte[] methodCodes, int currentIndex) {
+//			return 	(Expression) constantPool.getConstant(methodCodes[currentIndex+2]);
+//		}
+//
+//		@Override
+//		public byte[] supportsByteCodes() {
+//			
+//			return new byte[]{-71, -74};
+//		}
+//
+//	}
+//
+//
+//
+//
+//	static Collection<ExpressionBuilder> allBuilders = Arrays.asList((ExpressionBuilder)new MethodInvocation());
+//	static Map<Byte, ExpressionBuilder> expressionParsers = builderMap(allBuilders);
+//
+//	static abstract class ExpressionBuilder {
+//
+//		public abstract Object expressionFor(ConstantPool constantPool,
+//				byte[] methodCodes, int currentIndex);
+//		
+//		public abstract byte[] supportsByteCodes();
+//
+//	}
 
 
  
 	
-	public static Expression expressionAtLocation(final Location location) {
+	@SuppressWarnings("unchecked")
+	public static String expressionAtLocation(final Location location) throws IOException {
 		final byte[] methodCodes = location.method().bytecodes();
 		final int codeIndex = (int) location.codeIndex();
-		final byte currentByteCode = methodCodes[codeIndex];
-		final byte[] poolBytes = location.declaringType().constantPool();
-		final ConstantPool constantPool = new ConstantPool(poolBytes);
-		return expressionParsers.get(currentByteCode).
-				expressionFor(constantPool, methodCodes, codeIndex);
+		final DataInputStream byteCodeReader = new DataInputStream(new ByteArrayInputStream(methodCodes, codeIndex, 3));
+
+		final int currentByteCode = byteCodeReader.read();
+		if(currentByteCode == CodeConstants.opc_invokeinterface || currentByteCode ==
+		CodeConstants.opc_invokevirtual) {
+			DecompilerContext.initContext(Collections.EMPTY_MAP);
+			final org.jetbrains.java.decompiler.struct.consts.ConstantPool constantPool = parseConstantPool(location.declaringType());
+			final int methodReference = byteCodeReader.readUnsignedShort();
+			final LinkConstant constant = (LinkConstant) constantPool.getConstant(methodReference);
+			return constant.classname.replace('/', '.') + "." + constant.elementname + JniTypeToSourceTranslator.javaSignatureFromJni(constant.descriptor);
+		} else {
+			return null;
+		}
+	}
+	
+	private static org.jetbrains.java.decompiler.struct.consts.ConstantPool parseConstantPool(final ReferenceType type)
+			throws IOException {
+
+		final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		final DataOutputStream out = new DataOutputStream(buffer);
+		out.writeShort(type.constantPoolCount());
+		out.write(type.constantPool());
+		ByteArrayInputStream bis = new ByteArrayInputStream(
+				buffer.toByteArray());
+		DataInputStream dis = new DataInputStream(bis);
+
+		org.jetbrains.java.decompiler.struct.consts.ConstantPool constantPool = new org.jetbrains.java.decompiler.struct.consts.ConstantPool(
+				dis);
+		return constantPool;
+
 	}
 
 
@@ -72,16 +104,15 @@ public class DebugExpressionResolver {
 
 
 
-
-	private static Map<Byte, ExpressionBuilder> builderMap(
-			Collection<ExpressionBuilder> builders) {
-		final Map<Byte, ExpressionBuilder> builderMap = new HashMap<Byte, DebugExpressionResolver.ExpressionBuilder>();
-		for(ExpressionBuilder builder : builders){
-			for(byte code : builder.supportsByteCodes()){
-				builderMap.put(code, builder);
-			}
-		}
-		return builderMap;
-	}
+//	private static Map<Byte, ExpressionBuilder> builderMap(
+//			Collection<ExpressionBuilder> builders) {
+//		final Map<Byte, ExpressionBuilder> builderMap = new HashMap<Byte, DebugExpressionResolver.ExpressionBuilder>();
+//		for(ExpressionBuilder builder : builders){
+//			for(byte code : builder.supportsByteCodes()){
+//				builderMap.put(code, builder);
+//			}
+//		}
+//		return builderMap;
+//	}
 
 }

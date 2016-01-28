@@ -270,4 +270,8 @@ public class DebugAgent implements DebugAgentMBean {
 		this.unregisterMyself();
 		
 	}
+
+	public String getWalkback(final String walkback) throws IOException {
+		return this.getWalkbackPrinter().getWalkback(walkback);
+	}
 }
