@@ -107,7 +107,7 @@ public class Walkback {
 			if(thread.suspendCount()<2) {//increase suspendcount to ensure that thread does not resume after invoking method
 				thread.suspend();
 			}
-			Value asString = object.invokeMethod(thread, method, Collections.EMPTY_LIST, ObjectReference.INVOKE_SINGLE_THREADED);
+			Value asString = object.invokeMethod(thread, method, Collections.<Value> emptyList(), ObjectReference.INVOKE_SINGLE_THREADED);
 			return asString.toString();
 		} catch (Exception e) {
 			return "Unable to print";

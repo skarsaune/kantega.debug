@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.management.Attribute;
@@ -23,6 +26,7 @@ import javax.management.ReflectionException;
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.ClassType;
+import com.sun.jdi.InterfaceType;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
@@ -37,6 +41,13 @@ public class InstanceCounter implements DynamicMBean {
 	private VirtualMachine vm;
 	private Collection<String> attributes = new TreeSet<String>();
 	
+	public static Collection<String> leakCandidates=Arrays.asList(
+			"java.sql.Connection",
+			"java.sql.ResultSet",
+			"java.sql.DataSource",
+			"java.sql.Statement");
+			
+	
 	
 	void setVirtualMachine(final VirtualMachine vm) {
 		this.vm = vm;
@@ -49,14 +60,20 @@ public class InstanceCounter implements DynamicMBean {
 			return -1L;
 		}
 		try {
-		long[] counts = this.vm
-				.instanceCounts(this.vm.classesByName(className));
-		return sum(counts);
+		List<ReferenceType> classesByName = this.vm.classesByName(className);
+		return sumInstancesForClasses(classesByName);
 		}
 		catch (VMDisconnectedException e) {
 			this.vm=null;
 			return -1L;
 		}
+	}
+
+
+	private long sumInstancesForClasses(List<? extends ReferenceType> classesByName) {
+		long[] counts = this.vm
+				.instanceCounts(classesByName);
+		return sum(counts);
 	}
 
 	/**
@@ -223,6 +240,37 @@ public class InstanceCounter implements DynamicMBean {
 		this.attributes.clear();
 		this.attributes.addAll(classes);
 		
+	}
+	
+	public List<String> getResourceLeakCandidates() {
+		List<String> candidates=new LinkedList<String>();
+		for (final String resource : leakCandidates) {
+			if(!this.vm.classesByName(resource).isEmpty()) {
+				candidates.add(resource);
+			}
+		}
+		return candidates;
+		
+	} 
+	
+	public Map<String, Long> implementorsAndCounts(final String resource) {
+		Map<String, Long> result = new TreeMap<String, Long>();
+		for (final ReferenceType resourceRoot : this.vm.classesByName(resource)) {
+			if(resourceRoot instanceof ClassType) {
+				addImplementors(((ClassType) resourceRoot).subclasses(), result);
+			} else if (resourceRoot instanceof InterfaceType) {
+				addImplementors(((InterfaceType) resourceRoot).implementors(), result);
+			}
+		}
+		return result;
+	}
+
+
+	private void addImplementors(final List<ClassType> implementors, final Map<String, Long> result) {
+		for (ClassType classType : implementors) {
+			result.put(classType.name(), sumInstancesForClasses((Collections.singletonList(classType))));
+			addImplementors(classType.subclasses(), result);
+		}
 	}
 
 }

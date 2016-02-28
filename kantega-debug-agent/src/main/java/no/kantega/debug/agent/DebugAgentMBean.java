@@ -3,6 +3,7 @@ package no.kantega.debug.agent;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface to control the DeCentipede debugging agent
@@ -105,4 +106,20 @@ public interface DebugAgentMBean {
 	 * @return
 	 */
 	Collection<String> candidateClassesForFilter(String input);
+
+	/**
+	 * Get suggestions for resource hierarchy tops that may be relevant for checking subclasses
+	 * For instance java.sql.Connection
+	 * @return list of fully qualified class names 
+	 */
+	List<String> getResourceRootCandidates();
+
+	/**
+	 * 
+	 * @param resourceRoot root of resource hierarchy for instance java.sql.Connection
+	 * @return Implementor hierarchy including instance count for each
+	 */
+	Map<String, Long> getImplementorsAndCounts(String resourceRoot);
+	
+	
 }

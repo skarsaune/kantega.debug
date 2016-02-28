@@ -1,7 +1,5 @@
 package no.kantega.debug.util;
 
-import no.kantega.debug.execution.model.Expression;
-
 import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.event.ExceptionEvent;

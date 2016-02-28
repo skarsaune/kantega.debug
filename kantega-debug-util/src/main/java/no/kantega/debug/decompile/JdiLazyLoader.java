@@ -1,9 +1,12 @@
 package no.kantega.debug.decompile;
 
+import java.io.IOException;
 import java.util.NoSuchElementException;
 
 import org.jetbrains.java.decompiler.struct.StructMethod;
+import org.jetbrains.java.decompiler.struct.consts.ConstantPool;
 import org.jetbrains.java.decompiler.struct.lazy.LazyLoader;
+import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.Method;
 import com.sun.jdi.ReferenceType;
@@ -23,10 +26,25 @@ public class JdiLazyLoader extends LazyLoader {
 	}
 	
 	@Override
+	public ConstantPool loadPool(String classname) {
+		if(classname.equals(this.source.name())) {
+			try {
+				return ClassFileReverseEnginerer.parseConstantPool(this.source);
+			} catch (IOException e) {
+				LoggerFactory.getLogger(this.getClass()).warn("Unable to access constant pool of class: " + classname, e);
+			}
+		}
+		return super.loadPool(classname);
+	}
+	
+	@Override
 	public byte[] loadBytecode(StructMethod mt, int codeFullLength) {
 		for (final Method method : this.source.methods()) {
 			if(method.name().equals(mt.getName()) && method.signature().equals(mt.getDescriptor())) {
-				return method.bytecodes();
+				byte[] bytecodes = method.bytecodes();
+				byte[] includingEmptyExceptionTable = new byte[bytecodes.length + 2];
+				System.arraycopy(bytecodes, 0, includingEmptyExceptionTable, 0, bytecodes.length);
+				return includingEmptyExceptionTable;
 			}
 		}
 		throw new NoSuchElementException(this.source + " does not define any method " + mt.getName() + mt.getDescriptor());

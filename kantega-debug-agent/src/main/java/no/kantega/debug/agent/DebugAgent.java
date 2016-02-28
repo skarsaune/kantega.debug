@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
 import javax.management.MBeanServer;
@@ -43,6 +44,7 @@ public class DebugAgent implements DebugAgentMBean {
 	final private VirtualMachineProvider provider;
 	private final WalkbackPrinter walkbackPrinter=new WalkbackPrinter();
 	private InstanceCounter counter=new InstanceCounter();
+
 
 	public void setNullPointerDiagnosed(boolean nullPointerDiagnosed) {
 		this.nullPointerDiagnosed = nullPointerDiagnosed;
@@ -274,4 +276,13 @@ public class DebugAgent implements DebugAgentMBean {
 	public String getWalkback(final String walkback) throws IOException {
 		return this.getWalkbackPrinter().getWalkback(walkback);
 	}
+	
+	public List<String> getResourceRootCandidates() {
+		return this.counter.getResourceLeakCandidates();
+	}
+	
+	public Map<String, Long> getImplementorsAndCounts(String resourceRoot) {
+		return this.counter.implementorsAndCounts(resourceRoot);
+	}
+	
 }
