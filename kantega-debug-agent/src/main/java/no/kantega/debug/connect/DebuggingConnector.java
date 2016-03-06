@@ -19,12 +19,10 @@ public class DebuggingConnector {
 
 			public VirtualMachine virtualMachine() {
 				try {
-					Connection connection = new SocketTransportService().attach(
-							"8765", 0, 0);
-					VirtualMachine virtualMachine;
-					virtualMachine = Bootstrap
-							.virtualMachineManager().createVirtualMachine(
-									connection);
+					Connection connection = new SocketTransportService().attach("8765", 0, 0);
+					VirtualMachine virtualMachine = Bootstrap
+							.virtualMachineManager().createVirtualMachine(connection);
+					
 //					virtualMachine.setDebugTraceMode(VirtualMachine.TRACE_ALL);
 					return virtualMachine;
 				} catch (IOException e) {

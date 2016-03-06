@@ -133,17 +133,13 @@ var DeCentipede = (function(DeCentipede) {
 	DeCentipede.DeCentipedeController = function($scope, jolokia, $http) {
 
 		var loadedClasses = [];
-		
 		$scope.showAddClassControl = false;
+		$scope.agentAvailable = false;
+		$scope.showSelectResourceRootsControl = false;
+		$scope.showAddImplementorsControl = false;
+		$scope.implementors = {};
 		
-		$scope.agentAvailable = false; //workspace.treeContainsDomainAndProperties(jmxDomain);
-
 		$scope.table = {
-//			tabs : {
-//				'Settings' : [ 'EmitWalkbacks', 'NullPointerDiagnosed' ],
-//				'Monitoring' : ['MonitoredClasses', 'AddClass' ],
-//				'Walkbacks' : []
-//			},
 			properties : {
 				EmitWalkbacks : {
 					label : "Emit walkbacks",
@@ -155,33 +151,7 @@ var DeCentipede = (function(DeCentipede) {
 					tooltip : 'The agent will attempt to enrich NullPointerExceptions with details regarding the cause',
 					type : 'boolean'
 				}
-//				,
-//				MonitoredClasses : {
-//					label : "Monitor instances of classes",
-//					tooltip : 'Monitor instance counts of these classes',
-//					type : 'array',
-//					readonly : 'true'
-//						,
-//					'input-element' : 'textarea'
-				// 'input-attributes': {
-				// typeahead: "item for item in loadedClasses |
-				// filter:$viewValue"
-				// }
-				}
-//				,
-//				AddClass : {
-//					label : "Add class",
-//					type : "string",
-//					formTemplate : '<input id="addClass" type="text" typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue">'
-//				}
-				
-			/*
-			 * , RemoveClass : { label: "Remove class", type: "string",
-			 * formTemplate: '<select ng-options="cfor c in
-			 * agent.MonitoredClasses" ng-model="classToRemove"
-			 * title="RemoveClass"></select>' }
-			 */
-//			}
+			}
 		};
 		var lastResult=[];
 		$scope.loadedClasses = function(viewValue) {
@@ -218,7 +188,12 @@ var DeCentipede = (function(DeCentipede) {
 		$scope.showAddClass = function() {
 			$scope.showAddClassControl=true;
 			Core.$apply($scope);
-		}
+		};
+		
+		$scope.showAddResourceRoots = function() {
+			$scope.showAddResourceRootsControl=true;
+			Core.$apply($scope);
+		};
 		
 		$scope.stopMonitoringClass = function(className) {
 			jolokia.request( {
@@ -228,47 +203,61 @@ var DeCentipede = (function(DeCentipede) {
 				mbean : mbean
 			} );
 
-		}
+		};
 		
 		$scope.showWalkback = function(walkback) {
 			alert(walkback);
-		}
+		};
 		
 		$scope.onSelect = function($item, $model, $label) {
 			monitorClass($item);
-		}
+		};
+		
+		$scope.onSelectResource = function($item, $model, $label) {
+			$scope.showImplementors($item);
+		};
+		
+		$scope.showResourceRoots = function($item, $model, $label) {
+			$scope.showSelectResourceRootsControl = true;
+			$scope.showAddImplementorsControl = false;
+			Core.$apply($scope);
+		};
+		
+		$scope.showImplementors = function (resourceRoot) {
+			var implementorMap = jolokia.request( {
+				type : "exec",
+				operation : "getImplementorsAndCounts(java.lang.String)",
+				arguments: [resourceRoot],
+				mbean : mbean
+			}).value;
+			
+			DeCentipede.log.info("Retrieved implementors for " + resourceRoot + " : " + Object.keys(implementorMap));
+			$scope.implementors = implementorMap; //[];
+//			for(var prop in Object.keys(implementorMap)) {
+//				if(implementorMap.hasOwnProperty(prop)) {
+//					var implementor = {"class" : prop , "count" : implementorMap[prop]};
+//					DeCentipede.log.debug("Pushing " + implementor)
+//					$scope.implementors.push(implementor);
+//				}
+//			}
+			$scope.showSelectResourceRootsControl = false;
+			$scope.showAddImplementorsControl = true;
+			Core.$apply($scope);
+		};
 		
 		$scope.monitorClass = function() {
 			monitorClass($scope.classToAdd);
-		}
+		};
+		
+		$scope.monitorImplementor = function(implementor) {
+			monitorClass(implementor);
+			$scope.showAddImplementorsControl = false;
+			Core.$apply($scope);
+		};
 
-		// $scope.gridOptions = {
-		// scope: $scope,
-		// selectedItems: [],
-		// showFilter: false,
-		// canSelectRows: false,
-		// enableRowSelection: false,
-		// enableRowClickSelection: false,
-		// keepLastSelected: false,
-		// multiSelect: true,
-		// showColumnMenu: true,
-		// displaySelectionCheckbox: false,
-		// filterOptions: {
-		// filterText: ''
-		// },
-		// // TODO disabled for now as it causes
-		// https://github.com/hawtio/hawtio/issues/262
-		// //sortInfo: { field: 'name', direction: 'asc'},
-		// data: 'agent'//,
-		// //columnDefs: propertiesColumnDefs
-		// };
 
-		// $scope.hello = "Hello DeCentipede!";
-		// $scope.NullPointerDiagnosed = false;
-		// $scope.running = false;
-		// $scope.EmitWalkbacks = false;
 		$scope.agent = {};
-		var mirroredAttributes = [ 'NullPointerDiagnosed', 'EmitWalkbacks' ];
+		var mirroredAttributes = [ 'NullPointerDiagnosed', 'EmitWalkbacks' , 'ResourceRootCandidates'];
 		var isSettingUi = true;
 
 		var mbean = 'no.kantega.debug:type=DebugAgent';
@@ -278,16 +267,8 @@ var DeCentipede = (function(DeCentipede) {
 			var attribute = mirroredAttributes[index];
 			$scope.$watch('agent.' + attribute, function(newValue, oldValue,
 					scope) {
-				if (!isSettingUi && jolokia) {// ensure
-					// that
-					// we do
-					// not
-					// update
-					// based
-					// on
-					// updates
-					// from
-					// jolokia
+				// ensure that we do not update based on updates from jolokia
+				if (!isSettingUi && jolokia) {
 					DeCentipede.log.info("Sending updates to jolokia")
 					var requests = [];
 					for (i = 0; i < mirroredAttributes.length; i++) {
@@ -365,33 +346,8 @@ var DeCentipede = (function(DeCentipede) {
 		function renderCentipede(response) {
 			isSettingUi = true;
 			$scope.agentAvailable = true; //workspace.treeContainsDomainAndProperties(jmxDomain);
-			// for (index = 0; index < mirroredAttributes.length; index++) {
-			// var attribute = mirroredAttributes[index];
-			//
-			//				
-			// }
 			DeCentipede.log.debug(Date.now() + " Updating values from JMX");
 			$scope.agent = response.value;
-			// split on lines
-//			var classArray = $scope.agent.MonitoredClasses;
-//			var classString = '';
-//			for (var i = 0; i < classArray.length; i++) {
-//				classString += classArray[i] + '\n';
-//			}
-//			$scope.agent.MonitoredClasses = classString;
-
-//			var walkbacks = $scope.agent.Walkbacks;
-//			$scope.agent.Walkbacks={};
-//			for (var i = 0; i < walkbacks.length; i++) {
-//				var walkback = walkbacks[i];
-//				$scope.agent.walkbacks[walkback]="../decentipede-web/walkbacks" + walkback;
-//				$scope.table.properties.Walkbacks.push({walkback : walkback, type : "string", readonly : "true"});
-//				$scope.table.tabs.Walkbacks.pushd(walkback);
-//			}
-//			$scope.agent.MonitoredClasses = classString;
-			
-			
-			
 			$scope.running = response.value['Running'];
 			Core.$apply($scope);
 			isSettingUi = false;

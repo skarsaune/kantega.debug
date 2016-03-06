@@ -14,19 +14,22 @@
 						src='../decentipede-web/plugin/inc/img/decentipede-banner.png'>
 				</h3>
 				<h3>
-					JVM Debugging extensions are <span class="green" ng-hide="!agentAvailable || !running">RUNNING</span>
-					<span class="red" ng-hide="!agentAvailable || running">PAUSED</span> 
-					<span class="red" ng-hide="agentAvailable">NOT INSTALLED</span>:
+					JVM Debugging extensions are <span class="green"
+						ng-hide="!agentAvailable || !running">RUNNING</span> <span
+						class="red" ng-hide="!agentAvailable || running">PAUSED</span> <span
+						class="red" ng-hide="agentAvailable">NOT INSTALLED</span>:
 					<button class="btn" ng-hide="agentAvailable" ng-click="install()">
 						<i class="icon-download"></i> Install
 					</button>
-					<button class="btn" ng-hide="!agentAvailable || !running" ng-click="pause()">
+					<button class="btn" ng-hide="!agentAvailable || !running"
+						ng-click="pause()">
 						<i class="icon-pause"></i> Pause
 					</button>
-					<button class="btn" ng-hide="!agentAvailable || running" ng-click="start()">
+					<button class="btn" ng-hide="!agentAvailable || running"
+						ng-click="start()">
 						<i class="icon-play-circle"></i> Start
 					</button>
-					
+
 				</h3>
 			</h2>
 		</div>
@@ -38,8 +41,8 @@
 				ng-model="agent"></div>
 			</tab> <tab heading="Walkbacks">
 			<ul>
-				<li ng-repeat="walkback in agent.Walkbacks"
-					><a href="" ng-click="showWalkback('{{walkback}}')">{{walkback}}</a></li>
+				<li ng-repeat="walkback in agent.Walkbacks"><a href=""
+					ng-click="showWalkback('{{walkback}}')">{{walkback}}</a></li>
 			</ul>
 			</tab> <tab heading="Monitor Instances">
 			<ul>
@@ -48,6 +51,8 @@
 					ng-click="stopMonitoringClass('{{monitored}}')"
 					class="red icon-remove"></i> {{monitored}}</li>
 				<li tooltip="Add class" ng-click="showAddClass()" class="icon-plus"></li>
+				<li tooltip="Add implementor" ng-click="showResourceRoots()"
+					class="icon-circle-arrow-down"></li>
 			</ul>
 			</tab> </tabset>
 			<div class="ng-hide" ng-show="showAddClassControl">
@@ -57,6 +62,21 @@
 					typeahead-on-select="onSelect($item, $model, $label)"> <i
 					tooltip="Add this class" ng-click="monitorClass()"
 					class="icon-plus"></i>
+			</div>
+			<div class="ng-hide" ng-show="showSelectResourceRootsControl">
+				<input ng-model="resourceRoot" id="addResource" type="text"
+					typeahead="item for item in agent.ResourceRootCandidates"
+					typeahead-on-select="onSelectResource($item, $model, $label)"
+					ng-keydown="$event.which === 13 && showImplementors(resourceRoot)">
+				<i tooltip="Add implementors of" ng-click="showImplementors(resourceRoot)"></i>
+			</div>
+			<div class="ng-hide" ng-show="showAddImplementorsControl">
+				<ul>
+					<li ng-repeat="(implementor, count) in implementors"><i
+						tooltip="Add this class" href="#"
+						ng-click="monitorImplementor('{{implementor}}')" class="icon-plus"></i>
+						{{implementor}} - ({{count}})</li>
+				</ul>
 			</div>
 
 		</div>

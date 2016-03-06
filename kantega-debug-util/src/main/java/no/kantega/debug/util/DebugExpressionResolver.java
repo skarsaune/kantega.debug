@@ -11,6 +11,7 @@ import no.kantega.debug.bytecode.JniTypeToSourceTranslator;
 
 import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.struct.consts.ConstantPool;
 import org.jetbrains.java.decompiler.struct.consts.LinkConstant;
 
 import com.sun.jdi.Location;
@@ -52,28 +53,34 @@ public class DebugExpressionResolver {
 
  
 	
-	@SuppressWarnings("unchecked")
 	public static String expressionAtLocation(final Location location) throws IOException {
 		final byte[] methodCodes = location.method().bytecodes();
 		final int codeIndex = (int) location.codeIndex();
 		final DataInputStream byteCodeReader = new DataInputStream(new ByteArrayInputStream(methodCodes, codeIndex, 3));
-
 		final int currentByteCode = byteCodeReader.read();
-		if(currentByteCode == CodeConstants.opc_invokeinterface || currentByteCode ==
-		CodeConstants.opc_invokevirtual) {
-			DecompilerContext.initContext(Collections.EMPTY_MAP);
-			final org.jetbrains.java.decompiler.struct.consts.ConstantPool constantPool = parseConstantPool(location.declaringType());
+		if(isMethodInvocation(currentByteCode)) {
+			final ConstantPool constantPool = parseConstantPool(location.declaringType());
 			final int methodReference = byteCodeReader.readUnsignedShort();
 			final LinkConstant constant = (LinkConstant) constantPool.getConstant(methodReference);
-			return constant.classname.replace('/', '.') + "." + constant.elementname + JniTypeToSourceTranslator.javaSignatureFromJni(constant.descriptor);
+			return printConstant(constant);
 		} else {
 			return null;
 		}
 	}
+
+	private static boolean isMethodInvocation(final int currentByteCode) {
+		return currentByteCode == CodeConstants.opc_invokeinterface || currentByteCode ==
+		CodeConstants.opc_invokevirtual;
+	}
+
+	private static String printConstant(final LinkConstant constant) {
+		return constant.classname.replace('/', '.') + "." + constant.elementname + JniTypeToSourceTranslator.javaSignatureFromJni(constant.descriptor);
+	}
 	
+	@SuppressWarnings("unchecked")
 	private static org.jetbrains.java.decompiler.struct.consts.ConstantPool parseConstantPool(final ReferenceType type)
 			throws IOException {
-
+		DecompilerContext.initContext(Collections.EMPTY_MAP);
 		final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		final DataOutputStream out = new DataOutputStream(buffer);
 		out.writeShort(type.constantPoolCount());

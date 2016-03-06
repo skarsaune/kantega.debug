@@ -40,39 +40,33 @@ import com.sun.jdi.VirtualMachine;
 public class InstanceCounter implements DynamicMBean {
 	private VirtualMachine vm;
 	private Collection<String> attributes = new TreeSet<String>();
-	
-	public static Collection<String> leakCandidates=Arrays.asList(
-			"java.sql.Connection",
-			"java.sql.ResultSet",
-			"java.sql.DataSource",
+
+	public static Collection<String> leakCandidates = Arrays.asList(
+			"java.sql.Connection", "java.sql.ResultSet", "java.sql.DataSource",
 			"java.sql.Statement");
-			
-	
-	
+
 	void setVirtualMachine(final VirtualMachine vm) {
 		this.vm = vm;
 	}
 
-
 	public Object getAttribute(final String className) {
-		
-		if(cannotAccessMemory()) {
+
+		if (cannotAccessMemory()) {
 			return -1L;
 		}
 		try {
-		List<ReferenceType> classesByName = this.vm.classesByName(className);
-		return sumInstancesForClasses(classesByName);
-		}
-		catch (VMDisconnectedException e) {
-			this.vm=null;
+			List<ReferenceType> classesByName = this.vm
+					.classesByName(className);
+			return sumInstancesForClasses(classesByName);
+		} catch (VMDisconnectedException e) {
+			this.vm = null;
 			return -1L;
 		}
 	}
 
-
-	private long sumInstancesForClasses(List<? extends ReferenceType> classesByName) {
-		long[] counts = this.vm
-				.instanceCounts(classesByName);
+	private long sumInstancesForClasses(
+			List<? extends ReferenceType> classesByName) {
+		long[] counts = this.vm.instanceCounts(classesByName);
 		return sum(counts);
 	}
 
@@ -106,36 +100,37 @@ public class InstanceCounter implements DynamicMBean {
 				this.getAttributesInfo(), new MBeanConstructorInfo[0],
 				getOperationInfo(), new MBeanNotificationInfo[0]);
 	}
-	
+
 	public Collection<String> monitoredClasses() {
 		return this.attributes;
 	}
-	
+
 	public boolean enabled() {
 		return !this.cannotAccessMemory();
 	}
 
 	private MBeanOperationInfo[] getOperationInfo() {
 
-		return new MBeanOperationInfo[] {
-				getMethod("addClass", String.class),
+		return new MBeanOperationInfo[] { getMethod("addClass", String.class),
 				getMethod("removeClass", String.class),
-				getMethod("monitoredClasses"),
-				getMethod("enabled")};
+				getMethod("monitoredClasses"), getMethod("enabled") };
 	}
 
-	private MBeanOperationInfo getMethod(String methodName, Class<?> ... classes ) {
+	private MBeanOperationInfo getMethod(String methodName, Class<?>... classes) {
 		try {
 			return new MBeanOperationInfo(methodName, this.getClass()
 					.getDeclaredMethod(methodName, classes));
 		} catch (Exception e) {
-			throw new DebugAgentTechnicalRuntimeException("Unable to find method " + methodName, e);
-		} 
+			throw new DebugAgentTechnicalRuntimeException(
+					"Unable to find method " + methodName, e);
+		}
 	}
 
 	public boolean addClass(final String className) {
-		if(!this.cannotAccessMemory() && this.vm.classesByName(className).isEmpty()) {
-			throw new IllegalArgumentException(className + " is not loaded in this VM");
+		if (!this.cannotAccessMemory()
+				&& this.vm.classesByName(className).isEmpty()) {
+			throw new IllegalArgumentException(className
+					+ " is not loaded in this VM");
 		}
 		boolean result = this.attributes.add(className);
 		return result;
@@ -144,40 +139,40 @@ public class InstanceCounter implements DynamicMBean {
 	public boolean removeClass(final String className) {
 		return this.attributes.remove(className);
 	}
-	
+
 	public String[] getLoadedClasses() {
-		if(cannotAccessMemory()) {
-			return new String[]{"Unable to list classes"};
+		if (cannotAccessMemory()) {
+			return new String[] { "Unable to list classes" };
 		}
 		Collection<String> classes = loadedClassesFromJdi();
 		return classes.toArray(new String[classes.size()]);
 	}
 
-
 	private Collection<String> loadedClassesFromJdi() {
-		Collection<String> classes=new TreeSet<String>();
+		Collection<String> classes = new TreeSet<String>();
 		List<ReferenceType> loadedClasses = this.vm.allClasses();
-		LoggerFactory.getLogger(this.getClass()).debug("VM reports {} loaded classes", loadedClasses.size());
+		LoggerFactory.getLogger(this.getClass()).debug(
+				"VM reports {} loaded classes", loadedClasses.size());
 		for (ReferenceType referenceType : loadedClasses) {
-			if(referenceType instanceof ClassType) {
+			if (referenceType instanceof ClassType) {
 				classes.add(referenceType.name());
 			}
 		}
-		LoggerFactory.getLogger(this.getClass()).debug("Of which {} are classes", loadedClasses.size());
+		LoggerFactory.getLogger(this.getClass()).debug(
+				"Of which {} are classes", loadedClasses.size());
 		return classes;
 	}
-	
+
 	public Collection<String> candidateClassesForFilter(final String filter) {
-		if(filter.length() < 3 || cannotAccessMemory()) {
+		if (filter.length() < 3 || cannotAccessMemory()) {
 			return Arrays.asList(filter);
-		} 
-		else {
+		} else {
 			final String upperCase = filter.toUpperCase();
-			Collection<String> candidates=new TreeSet<String>();
+			Collection<String> candidates = new TreeSet<String>();
 			for (String aClass : loadedClassesFromJdi()) {
-				if(aClass.toUpperCase().contains(upperCase)){
+				if (aClass.toUpperCase().contains(upperCase)) {
 					candidates.add(aClass);
-				}			
+				}
 			}
 			return candidates;
 		}
@@ -193,9 +188,8 @@ public class InstanceCounter implements DynamicMBean {
 				this.attributes.size());
 		for (String className : this.attributes) {
 
-				attributes.add(new MBeanAttributeInfo(className, "long", "Instances of " + className,
-						true,
-						false, false));
+			attributes.add(new MBeanAttributeInfo(className, "long",
+					"Instances of " + className, true, false, false));
 
 		}
 		LoggerFactory.getLogger(this.getClass()).trace(
@@ -210,17 +204,16 @@ public class InstanceCounter implements DynamicMBean {
 
 	public Object invoke(String actionName, Object[] params, String[] signature)
 			throws MBeanException, ReflectionException {
-		if("addClass".equals(actionName)) {
+		if ("addClass".equals(actionName)) {
 			return this.addClass(params[0].toString());
-			
-		}
-		else if("removeClass".equals(actionName)) {
+
+		} else if ("removeClass".equals(actionName)) {
 			return this.removeClass(params[0].toString());
-		} else if("monitoredClasses".equals(actionName)) {
+		} else if ("monitoredClasses".equals(actionName)) {
 			return this.monitoredClasses();
-		}
-		else {
-			throw new UnsupportedOperationException("Unknown operation " + actionName);
+		} else {
+			throw new UnsupportedOperationException("Unknown operation "
+					+ actionName);
 		}
 	}
 
@@ -235,40 +228,48 @@ public class InstanceCounter implements DynamicMBean {
 		throw new UnsupportedOperationException("Can not set attributes");
 	}
 
-
 	public void setMonitoredClasses(List<String> classes) {
 		this.attributes.clear();
 		this.attributes.addAll(classes);
-		
+
 	}
-	
+
 	public List<String> getResourceLeakCandidates() {
-		List<String> candidates=new LinkedList<String>();
-		for (final String resource : leakCandidates) {
-			if(!this.vm.classesByName(resource).isEmpty()) {
-				candidates.add(resource);
+		List<String> candidates = new LinkedList<String>();
+		if (this.vm != null) {
+			for (final String resource : leakCandidates) {
+				if (!this.vm.classesByName(resource).isEmpty()) {
+					candidates.add(resource);
+				}
 			}
 		}
 		return candidates;
-		
-	} 
-	
+
+	}
+
 	public Map<String, Long> implementorsAndCounts(final String resource) {
 		Map<String, Long> result = new TreeMap<String, Long>();
-		for (final ReferenceType resourceRoot : this.vm.classesByName(resource)) {
-			if(resourceRoot instanceof ClassType) {
-				addImplementors(((ClassType) resourceRoot).subclasses(), result);
-			} else if (resourceRoot instanceof InterfaceType) {
-				addImplementors(((InterfaceType) resourceRoot).implementors(), result);
+		if (this.vm != null) {
+			for (final ReferenceType resourceRoot : this.vm
+					.classesByName(resource)) {
+				if (resourceRoot instanceof ClassType) {
+					addImplementors(((ClassType) resourceRoot).subclasses(),
+							result);
+				} else if (resourceRoot instanceof InterfaceType) {
+					addImplementors(
+							((InterfaceType) resourceRoot).implementors(),
+							result);
+				}
 			}
 		}
 		return result;
 	}
 
-
-	private void addImplementors(final List<ClassType> implementors, final Map<String, Long> result) {
+	private void addImplementors(final List<ClassType> implementors,
+			final Map<String, Long> result) {
 		for (ClassType classType : implementors) {
-			result.put(classType.name(), sumInstancesForClasses((Collections.singletonList(classType))));
+			result.put(classType.name(), sumInstancesForClasses((Collections
+					.singletonList(classType))));
 			addImplementors(classType.subclasses(), result);
 		}
 	}
