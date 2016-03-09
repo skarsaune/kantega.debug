@@ -12,7 +12,7 @@ public interface DeadlockDetectorMBean {
 	 * 
 	 * @return List the names of deadlocked threads if any
 	 */
-	List<String> deadLockedThreads();
+	List<WaitingThread> deadLockedThreads();
 	/**
 	 * 
 	 * @param threadName - the thread that is to be checked for 

@@ -6,8 +6,6 @@ import java.util.Map;
 
 import no.kantega.debug.decompile.ClassFileReverseEnginerer;
 
-import org.junit.Test;
-
 import com.sun.jdi.ClassNotLoadedException;
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.InvalidTypeException;
@@ -27,7 +25,7 @@ import com.sun.tools.jdi.SunCommandLineLauncher;
 
 public class ReverseEngineerByteCodeTest {
 
-	@Test
+//	@Test
 	public void testSimpleClass() throws Exception {
 		LaunchingConnector launcher = new SunCommandLineLauncher();
 		Map<String, Argument> arguments = launcher.defaultArguments();

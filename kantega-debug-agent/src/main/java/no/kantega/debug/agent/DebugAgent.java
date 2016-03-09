@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import javax.management.ObjectName;
 
 import no.kantega.debug.agent.jvm.InstallAgent;
 import no.kantega.debug.util.NullPointerHandler;
+import no.kantega.debug.util.Walkback;
 
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,7 @@ import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StringReference;
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.Value;
 import com.sun.jdi.VirtualMachine;
@@ -45,6 +48,30 @@ public class DebugAgent implements DebugAgentMBean {
 	private final WalkbackPrinter walkbackPrinter=new WalkbackPrinter();
 	private InstanceCounter counter=new InstanceCounter();
 
+	public List<WaitingThread> getDeadlocks() {
+		if(!this.isRunning()) {
+			return Collections.emptyList();
+		} else {
+			return new DeadlockDetectorAgent(this.vm).deadLockedThreads();
+		}
+	}
+	
+	public String dumpThreadWalkback(final String threadName) {
+		if(!this.isRunning()) {
+			return null;
+		}
+		for (final ThreadReference reference : this.vm.allThreads()) {
+			if(reference.name().equals(threadName)) {
+				try {
+					return Walkback.printFrames(reference.frames());
+				} catch (Exception e) {
+					LoggerFactory.getLogger(this.getClass()).warn("Unable to print walkback of thread with name {}" , threadName);
+				}
+			}
+			
+		}
+		return null;
+	}
 
 	public void setNullPointerDiagnosed(boolean nullPointerDiagnosed) {
 		this.nullPointerDiagnosed = nullPointerDiagnosed;

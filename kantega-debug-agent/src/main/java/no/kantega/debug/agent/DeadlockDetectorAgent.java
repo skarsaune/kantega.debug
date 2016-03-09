@@ -23,17 +23,26 @@ import com.sun.jdi.event.MonitorWaitEvent;
 
 public class DeadlockDetectorAgent implements DeadlockDetectorMBean {
 
-	private VirtualMachine vm;
+	private final VirtualMachine vm;
 	private ObjectReference terminateException;
 
-	public List<String> deadLockedThreads() {
+	public DeadlockDetectorAgent(final VirtualMachine vm) {
+		this.vm = vm;
+	}
+
+	public List<WaitingThread> deadLockedThreads() {
 		checkState();
 		List<ThreadReference> deadlockedThreads = DeadlockDetector
 				.deadlockedThreads(this.vm);
-		ArrayList<String> threadNames = new ArrayList<String>(
+		ArrayList<WaitingThread> threadNames = new ArrayList<WaitingThread>(
 				deadlockedThreads.size());
 		for (final ThreadReference ref : deadlockedThreads) {
-			threadNames.add(ref.name());
+			try {
+				threadNames.add(new WaitingThread(ref));
+			} catch (IncompatibleThreadStateException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		return threadNames;
 	}
@@ -45,30 +54,24 @@ public class DeadlockDetectorAgent implements DeadlockDetectorMBean {
 	}
 
 	public Collection<String> deadLockedThreadsIfAny(
-			final MonitorWaitEvent event) throws IncompatibleThreadStateException {
+			final MonitorWaitEvent event)
+			throws IncompatibleThreadStateException {
 		checkState();
-		Set<ThreadReference> recursionSet = new HashSet<ThreadReference>(
-				Arrays.asList(event.thread()));
-		if (DeadlockDetector.isDeadLocked(event.monitor().owningThread(),
-				recursionSet)) {
-			tryToCreateException(event.thread());
-			Collection<String> sortedNames = new TreeSet<String>();
-			for (ThreadReference reference : recursionSet) {
-				sortedNames.add(reference.name());
-			}
-			return sortedNames;
-
-		} else {
-			return Collections.emptySet();
+		Collection<String> sortedNames = new TreeSet<String>();
+		for (ThreadReference reference : DeadlockDetector
+				.deadlockedThreads(event.virtualMachine())) {
+			sortedNames.add(reference.name());
 		}
+		return sortedNames;
 
 	}
 
 	private void tryToCreateException(ThreadReference thread) {
-		if(this.terminateException == null) { 
-			this.terminateException = createException(thread, "java.lang.IllegalThreadStateException");
+		if (this.terminateException == null) {
+			this.terminateException = createException(thread,
+					"java.lang.IllegalThreadStateException");
 		}
-		
+
 	}
 
 	private void checkState() {

@@ -41,8 +41,8 @@
 				ng-model="agent"></div>
 			</tab> <tab heading="Walkbacks">
 			<ul>
-				<li ng-repeat="walkback in agent.Walkbacks"><a href=""
-					ng-click="showWalkback('{{walkback}}')">{{walkback}}</a></li>
+				<li ng-repeat="walkback in agent.Walkbacks"><a
+					href="../decentipede-web/walkback/{{walkback}}" target="_blank">{{walkback}}</a></li>
 			</ul>
 			</tab> <tab heading="Monitor Instances">
 			<ul>
@@ -54,7 +54,11 @@
 				<li tooltip="Add implementor" ng-click="showResourceRoots()"
 					class="icon-circle-arrow-down"></li>
 			</ul>
-			</tab> </tabset>
+			</tab> <!-- 			<tab heading="Deadlocks"> --> <!-- 			<ul> --> <!-- 				<li class="glyphicon glyphicon-cog" -->
+			<!-- 					ng-repeat="thread in agent.Deadlocks" tooltip="Deadlocked thread"> -->
+			<!-- 					{{thread.name}} waiting for monitor {{thread.monitor}} held by -->
+			<!-- 					{{thread.heldBy}}</li> --> <!-- 			</ul> --> <!-- 			</tab> -->
+			</tabset>
 			<div class="ng-hide" ng-show="showAddClassControl">
 				<input ng-model="classToAdd" id="addClass" type="text"
 					typeahead="item for item in loadedClasses($viewValue) | filter:$viewValue"
@@ -68,14 +72,16 @@
 					typeahead="item for item in agent.ResourceRootCandidates"
 					typeahead-on-select="onSelectResource($item, $model, $label)"
 					ng-keydown="$event.which === 13 && showImplementors(resourceRoot)">
-				<i tooltip="Add implementors of" ng-click="showImplementors(resourceRoot)"></i>
+				<i tooltip="Add implementors of"
+					ng-click="showImplementors(resourceRoot)"></i>
 			</div>
 			<div class="ng-hide" ng-show="showAddImplementorsControl">
 				<ul>
-					<li ng-repeat="(implementor, count) in implementors"><i
+					<li ng-repeat="implementor in implementors"><i
 						tooltip="Add this class" href="#"
-						ng-click="monitorImplementor('{{implementor}}')" class="icon-plus"></i>
-						{{implementor}} - ({{count}})</li>
+						ng-click="monitorImplementor('{{implementor.class}}')"
+						class="icon-plus"></i> {{implementor.class}} -
+						({{implementor.count}})</li>
 				</ul>
 			</div>
 

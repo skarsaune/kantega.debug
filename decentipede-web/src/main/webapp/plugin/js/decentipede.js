@@ -232,14 +232,14 @@ var DeCentipede = (function(DeCentipede) {
 			}).value;
 			
 			DeCentipede.log.info("Retrieved implementors for " + resourceRoot + " : " + Object.keys(implementorMap));
-			$scope.implementors = implementorMap; //[];
-//			for(var prop in Object.keys(implementorMap)) {
-//				if(implementorMap.hasOwnProperty(prop)) {
-//					var implementor = {"class" : prop , "count" : implementorMap[prop]};
-//					DeCentipede.log.debug("Pushing " + implementor)
-//					$scope.implementors.push(implementor);
-//				}
-//			}
+			$scope.implementors = [];
+			for(var prop in implementorMap) {
+				if(implementorMap.hasOwnProperty(prop)) {
+					var implementor = {"class" : prop , "count" : implementorMap[prop]};
+					DeCentipede.log.debug("Pushing " + implementor)
+					$scope.implementors.push(implementor);
+				}
+			}
 			$scope.showSelectResourceRootsControl = false;
 			$scope.showAddImplementorsControl = true;
 			Core.$apply($scope);
@@ -257,7 +257,9 @@ var DeCentipede = (function(DeCentipede) {
 
 
 		$scope.agent = {};
-		var mirroredAttributes = [ 'NullPointerDiagnosed', 'EmitWalkbacks' , 'ResourceRootCandidates'];
+//		$scope.agent.Deadlocks = [];
+//		$scope.agent.Deadlocks.push({"name" : "Thread-1", "monitor" : "Object(23)" , "heldBy" : "Thread-2"});
+		var mirroredAttributes = [ 'NullPointerDiagnosed', 'EmitWalkbacks' , 'ResourceRootCandidates', 'Deadlocks'];
 		var isSettingUi = true;
 
 		var mbean = 'no.kantega.debug:type=DebugAgent';
@@ -348,6 +350,8 @@ var DeCentipede = (function(DeCentipede) {
 			$scope.agentAvailable = true; //workspace.treeContainsDomainAndProperties(jmxDomain);
 			DeCentipede.log.debug(Date.now() + " Updating values from JMX");
 			$scope.agent = response.value;
+//			$scope.agent.Deadlocks = [];
+//			$scope.agent.Deadlocks.push({"name" : "Thread-1", "monitor" : "Object(23)" , "heldBy" : "Thread-2"});
 			$scope.running = response.value['Running'];
 			Core.$apply($scope);
 			isSettingUi = false;

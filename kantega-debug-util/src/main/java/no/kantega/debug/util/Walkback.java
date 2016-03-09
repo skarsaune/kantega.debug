@@ -1,6 +1,7 @@
 package no.kantega.debug.util;
 
 import java.util.Collections;
+import java.util.List;
 
 import com.sun.jdi.AbsentInformationException;
 import com.sun.jdi.LocalVariable;
@@ -13,21 +14,38 @@ import com.sun.jdi.event.LocatableEvent;
 
 public class Walkback {
 
+	/**
+	 * Pritn walkback of a given JDI event
+	 * @param event
+	 * @return
+	 */
 	public static String printWalkback(LocatableEvent event) {
-		StringBuilder builder=new StringBuilder();
+
 		try {
-			for(StackFrame frame : event.thread().frames()) {
-				printFrame(frame, builder);
-			}
-			ensureThreadIsResumed(event);			
-			return builder.toString();
-
-
+			return printFrames(event.thread().frames());
 		} catch (Exception e) {
 			return "unable to print stack trace: " + e;
+		} finally {
+			ensureThreadIsResumed(event);						
 		}
 		
 	}
+
+
+
+	/**
+	 * Dump walkback of the frames to String builder
+	 * @param frames stack frames
+	 */
+	public static String printFrames(List<StackFrame> frames) {
+		StringBuilder builder=new StringBuilder();		
+		for(StackFrame frame : frames) {
+			printFrame(frame, builder);
+		}
+		return builder.toString();
+	}
+	
+
 
 	/**
 	 * In case we have piled up too many suspend requests, ensure thread is resumed
@@ -101,6 +119,7 @@ public class Walkback {
 //		printObject(object, thread);
 	}
 
+	@SuppressWarnings("unused")
 	private static Object printObject(ObjectReference object, ThreadReference thread) {
 		Method method = object.virtualMachine().classesByName("java.lang.Object").get(0).methodsByName("toString").get(0);
 		try {

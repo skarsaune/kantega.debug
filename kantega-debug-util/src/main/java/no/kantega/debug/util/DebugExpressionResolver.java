@@ -58,9 +58,10 @@ public class DebugExpressionResolver {
 		final int codeIndex = (int) location.codeIndex();
 		final DataInputStream byteCodeReader = new DataInputStream(new ByteArrayInputStream(methodCodes, codeIndex, 3));
 		final int currentByteCode = byteCodeReader.read();
-		if(isMethodInvocation(currentByteCode)) {
+		if(isMethodInvocation(currentByteCode)) {//should always be true!
 			final ConstantPool constantPool = parseConstantPool(location.declaringType());
 			final int methodReference = byteCodeReader.readUnsignedShort();
+			//decompiler constant pool representation of method invocation
 			final LinkConstant constant = (LinkConstant) constantPool.getConstant(methodReference);
 			return printConstant(constant);
 		} else {

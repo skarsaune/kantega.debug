@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.management.Attribute;
@@ -23,10 +22,11 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
 
+import no.kantega.debug.memory.DebugMemoryAccessor;
+
 import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.ClassType;
-import com.sun.jdi.InterfaceType;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
@@ -55,33 +55,11 @@ public class InstanceCounter implements DynamicMBean {
 			return -1L;
 		}
 		try {
-			List<ReferenceType> classesByName = this.vm
-					.classesByName(className);
-			return sumInstancesForClasses(classesByName);
+			return DebugMemoryAccessor.instances(this.vm, className);
 		} catch (VMDisconnectedException e) {
 			this.vm = null;
 			return -1L;
 		}
-	}
-
-	private long sumInstancesForClasses(
-			List<? extends ReferenceType> classesByName) {
-		long[] counts = this.vm.instanceCounts(classesByName);
-		return sum(counts);
-	}
-
-	/**
-	 * Sum instance counts
-	 * 
-	 * @param counts
-	 * @return
-	 */
-	private long sum(long[] counts) {
-		long sum = 0;
-		for (long count : counts) {
-			sum += count;
-		}
-		return sum;
 	}
 
 	public AttributeList getAttributes(String[] attributes) {
@@ -248,30 +226,13 @@ public class InstanceCounter implements DynamicMBean {
 	}
 
 	public Map<String, Long> implementorsAndCounts(final String resource) {
-		Map<String, Long> result = new TreeMap<String, Long>();
-		if (this.vm != null) {
-			for (final ReferenceType resourceRoot : this.vm
-					.classesByName(resource)) {
-				if (resourceRoot instanceof ClassType) {
-					addImplementors(((ClassType) resourceRoot).subclasses(),
-							result);
-				} else if (resourceRoot instanceof InterfaceType) {
-					addImplementors(
-							((InterfaceType) resourceRoot).implementors(),
-							result);
-				}
-			}
+		if(this.vm == null || !this.vm.canGetInstanceInfo()) {
+			return Collections.emptyMap();
+		} else {
+			return DebugMemoryAccessor.implementorsAndCounts(resource, this.vm);
 		}
-		return result;
 	}
 
-	private void addImplementors(final List<ClassType> implementors,
-			final Map<String, Long> result) {
-		for (ClassType classType : implementors) {
-			result.put(classType.name(), sumInstancesForClasses((Collections
-					.singletonList(classType))));
-			addImplementors(classType.subclasses(), result);
-		}
-	}
+
 
 }

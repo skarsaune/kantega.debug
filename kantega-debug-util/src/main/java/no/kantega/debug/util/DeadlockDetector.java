@@ -5,6 +5,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.LoggerFactory;
+
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ThreadReference;
@@ -23,12 +25,14 @@ public class DeadlockDetector {
 	 * @return
 	 */
 	public static List<ThreadReference> deadlockedThreads(final VirtualMachine vm) {
+		LoggerFactory.getLogger(DeadlockDetector.class).info("Looking for deadlocks in vm");
 		final List<ThreadReference> lockedThreads=new LinkedList<ThreadReference>();
 		for (ThreadReference threadReference : vm.allThreads()) {
 			if(isDeadLocked(threadReference)) {
 				lockedThreads.add(threadReference);
 			}
 		}
+		LoggerFactory.getLogger(DeadlockDetector.class).info("Found {} deadlocks" , lockedThreads.size());
 		return lockedThreads;
 		
 	}
@@ -38,22 +42,22 @@ public class DeadlockDetector {
 
 
 	private static boolean isDeadLocked(final ThreadReference threadReference) {
-		return isDeadLocked(threadReference, new HashSet<ThreadReference>());
+		return isDeadLocked(threadReference, new HashSet<Long>());
 
 	}
 	
-	public static boolean isDeadLocked(final ThreadReference threadReference, final Set<ThreadReference> recursionSet) {
+	public static boolean isDeadLocked(final ThreadReference threadReference, final Set<Long> recursionSet) {
 		if(threadReference == null){//monitor chain broken
 			return false;
 		}
 		
-		if(recursionSet.contains(threadReference)) {
+		if(recursionSet.contains(threadReference.uniqueID())) {
 			return true;
 		}
 		
 
 		
-		recursionSet.add(threadReference);
+		recursionSet.add(threadReference.uniqueID());
 		return isDeadLocked(waitingForThread(threadReference));
 	}
 	
