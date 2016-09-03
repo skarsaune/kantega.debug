@@ -5,7 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.slf4j.LoggerFactory;
+import no.kantega.debug.log.Logging;
 
 import com.sun.jdi.IncompatibleThreadStateException;
 import com.sun.jdi.ObjectReference;
@@ -25,14 +25,20 @@ public class DeadlockDetector {
 	 * @return
 	 */
 	public static List<ThreadReference> deadlockedThreads(final VirtualMachine vm) {
-		LoggerFactory.getLogger(DeadlockDetector.class).info("Looking for deadlocks in vm");
+		Logging.info(DeadlockDetector.class,"Looking for deadlocks in vm");
 		final List<ThreadReference> lockedThreads=new LinkedList<ThreadReference>();
+		try {
+			vm.suspend();
 		for (ThreadReference threadReference : vm.allThreads()) {
 			if(isDeadLocked(threadReference)) {
 				lockedThreads.add(threadReference);
 			}
 		}
-		LoggerFactory.getLogger(DeadlockDetector.class).info("Found {} deadlocks" , lockedThreads.size());
+		} finally {
+			vm.resume();
+		}
+		
+		Logging.info(DeadlockDetector.class,"Found {} deadlocks" , lockedThreads.size());
 		return lockedThreads;
 		
 	}

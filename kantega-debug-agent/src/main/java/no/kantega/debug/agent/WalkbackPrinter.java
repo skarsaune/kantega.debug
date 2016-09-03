@@ -2,8 +2,6 @@ package no.kantega.debug.agent;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -13,8 +11,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.LoggerFactory;
-
+import no.kantega.debug.log.Logging;
 import no.kantega.debug.util.Walkback;
 
 import com.sun.jdi.event.LocatableEvent;
@@ -30,6 +27,7 @@ public class WalkbackPrinter {
 				+ ".walkback";
 	}
 
+	@SuppressWarnings("resource")
 	public File printWalkback(LocatableEvent event) {
 		final String contents = Walkback.printWalkback(event);
 		try {
@@ -38,10 +36,10 @@ public class WalkbackPrinter {
 			}
 			File walkbackFile = new File(walkbackFolder, nextWalkbackName());
 			new FileWriter(walkbackFile).append(contents).close();
-			LoggerFactory.getLogger(this.getClass()).info("Written walkback to file: " + walkbackFile);
+			Logging.info(this.getClass(),"Written walkback to file: {}" , walkbackFile);
 			return walkbackFile;
 		} catch (IOException e) {
-			LoggerFactory.getLogger(this.getClass()).error("Unable to write walkback to file " , e);
+			Logging.error(this.getClass(),"Unable to write walkback to file " , e);
 			return null;
 		}
 	}

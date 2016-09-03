@@ -1,9 +1,8 @@
 package no.kantega.debug.agent.jvm;
 
-import org.slf4j.LoggerFactory;
-
 import no.kantega.debug.agent.DebugAgent;
 import no.kantega.debug.inprocess.connect.AutomaticDebuggingConnector;
+import no.kantega.debug.log.Logging;
 
 /**
  * Java Agent that will install the decentipede debug agent in a target VM
@@ -37,12 +36,12 @@ public class DecentipedeJvmAgent {
 
 	private static DebugAgent startAgent() {
 		if("true".equalsIgnoreCase(System.getProperty("decentipede.installed", "false"))) {
-			LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Decentipede JVM agent is already installed");
+			Logging.info(DecentipedeJvmAgent.class,"Decentipede JVM agent is already installed");
 		}
-		LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Installing Decentipede JVM agent");
+		Logging.info(DecentipedeJvmAgent.class,"Installing Decentipede JVM agent");
 		agent = new DebugAgent(new AutomaticDebuggingConnector());
 		System.setProperty("decentipede.installed", "true");
-		LoggerFactory.getLogger(DecentipedeJvmAgent.class).info("Decentipede JVM agent installed and registered in JMX");
+		Logging.info(DecentipedeJvmAgent.class,"Decentipede JVM agent installed and registered in JMX");
 		return agent;
 	}
 }

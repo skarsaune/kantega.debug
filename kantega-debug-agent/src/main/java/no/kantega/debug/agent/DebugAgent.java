@@ -15,10 +15,9 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import no.kantega.debug.agent.jvm.InstallAgent;
+import no.kantega.debug.log.Logging;
 import no.kantega.debug.util.NullPointerHandler;
 import no.kantega.debug.util.Walkback;
-
-import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
@@ -65,7 +64,7 @@ public class DebugAgent implements DebugAgentMBean {
 				try {
 					return Walkback.printFrames(reference.frames());
 				} catch (Exception e) {
-					LoggerFactory.getLogger(this.getClass()).warn("Unable to print walkback of thread with name {}" , threadName);
+					Logging.warn(this.getClass(),"Unable to print walkback of thread with name {}" , threadName);
 				}
 			}
 			
@@ -91,7 +90,7 @@ public class DebugAgent implements DebugAgentMBean {
 			mbs.registerMBean(this, new ObjectName(DEBUG_AGENT_JMX_NAME));
 			mbs.registerMBean(this.counter, new ObjectName(INSTANCE_COUNTER_JMX_NAME));
 		} catch (Exception e) {
-			LoggerFactory.getLogger(this.getClass()).error(
+			Logging.error(this.getClass(),
 					"Unable to register myself in JMX", e);
 		}
 
@@ -103,7 +102,7 @@ public class DebugAgent implements DebugAgentMBean {
 			mbs.unregisterMBean(new ObjectName(DEBUG_AGENT_JMX_NAME));
 			mbs.unregisterMBean(new ObjectName(INSTANCE_COUNTER_JMX_NAME));
 		} catch (Exception e) {
-			LoggerFactory.getLogger(this.getClass()).error(
+			Logging.error(this.getClass(),
 					"Unable to unregister myself in JMX", e);
 		}
 
@@ -113,7 +112,7 @@ public class DebugAgent implements DebugAgentMBean {
 		this.vm = this.provider.virtualMachine();
 		if (this.vm == null) {
 			this.running = false;
-			LoggerFactory.getLogger(this.getClass()).error(
+			Logging.error(this.getClass(),
 					"Could not start manager as there is no available VM");
 			return;
 		}
@@ -164,12 +163,12 @@ public class DebugAgent implements DebugAgentMBean {
 					handleEvent(events.next());
 				}
 			} catch (VMDisconnectedException e) {
-				LoggerFactory.getLogger(this.getClass()).error("VM has been disconnected, shutting down agent!", e);
+				Logging.error(this.getClass(),"VM has been disconnected, shutting down agent!", e);
 				this.stop();
 			} 
 			
 			catch (Exception e) {
-				LoggerFactory.getLogger(this.getClass()).error(
+				Logging.error(this.getClass(),
 						"Error occurred processing debug events", e);
 
 			}
@@ -218,7 +217,7 @@ public class DebugAgent implements DebugAgentMBean {
 
 	private void reportAboutWalkback(ExceptionEvent event, File walkbackFile) {
 		final ObjectReference exception = event.exception();
-		LoggerFactory.getLogger(this.getClass()).warn("Attaching walkback information to exception {}", exception);
+		Logging.warn(this.getClass(),"Attaching walkback information to exception {}", exception);
 
 		
 		try {
@@ -233,7 +232,7 @@ public class DebugAgent implements DebugAgentMBean {
 					event.virtualMachine()
 							.mirrorOf(messageString));
 		} catch (Exception e) {
-			LoggerFactory.getLogger(this.getClass()).warn("Unable to attach walkback information to exception ", e);
+			Logging.warn(this.getClass(),"Unable to attach walkback information to exception ", e);
 		} 
 		
 	}

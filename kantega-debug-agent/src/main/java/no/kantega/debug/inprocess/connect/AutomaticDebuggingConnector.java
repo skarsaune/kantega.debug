@@ -9,15 +9,11 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 
 import no.kantega.debug.agent.VirtualMachineProvider;
-
-import org.slf4j.LoggerFactory;
+import no.kantega.debug.log.Logging;
 
 import com.sun.jdi.Bootstrap;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector.Argument;
-import com.sun.tools.attach.AgentInitializationException;
-import com.sun.tools.attach.AgentLoadException;
-import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.jdi.ProcessAttachingConnector;
 import com.sun.tools.jdi.SocketTransportService;
 
@@ -87,7 +83,7 @@ public class AutomaticDebuggingConnector implements VirtualMachineProvider {
 
 			}
 		} catch (Exception e) {// quick and dirty
-			LoggerFactory.getLogger(this.getClass()).error(
+			Logging.error(this.getClass(),
 					"Unable to connect to JVM by parsing command line", e);
 		}
 		return null;
@@ -124,7 +120,7 @@ public class AutomaticDebuggingConnector implements VirtualMachineProvider {
 			arguments.get("timeout").setValue("0");
 		}
 		try {
-			LoggerFactory.getLogger(this.getClass()).info("Connecting to debugger with pid: {}" , pidString);
+			Logging.info(this.getClass(),"Connecting to debugger with pid: {}" , pidString);
 			VirtualMachine attach = connector.attach(arguments);
 			return attach;
 		} catch (Exception e) {
@@ -134,28 +130,28 @@ public class AutomaticDebuggingConnector implements VirtualMachineProvider {
 		}
 	}
 
-	private void setUpDebuggerIfRequrired(final String pid) {
-		com.sun.tools.attach.VirtualMachine vm;
-		try {
-			LoggerFactory.getLogger(this.getClass()).info("Checking if debugger is listening in Java process with PID {}", pid);
-			vm = com.sun.tools.attach.VirtualMachine.attach(pid);
-
-			final Object jdwpProperties = vm.getAgentProperties().get("jdwp");
-			if (jdwpProperties != null) {
-				// logger.info("Debugger is already running {}",
-				// jdwpProperties);
-			} else {
-				final String jdwpOptions = "transport=dt_socket,server=y,suspend=n,address="
-						+ allocateFreePort();
-				// logger.info("Setting up jdwp with options: {}", jdwpOptions);
-				
-				LoggerFactory.getLogger(this.getClass()).info("Starting jwdp in JVM {} with arguments {}", pid, jdwpOptions);
-				vm.loadAgentLibrary("jdwp", jdwpOptions);
-			}
-		} catch (Exception e) {
-			
-		} 
-	}
+//	private void setUpDebuggerIfRequrired(final String pid) {
+//		com.sun.tools.attach.VirtualMachine vm;
+//		try {
+//			Logging.info(this.getClass(),"Checking if debugger is listening in Java process with PID {}", pid);
+//			vm = com.sun.tools.attach.VirtualMachine.attach(pid);
+//
+//			final Object jdwpProperties = vm.getAgentProperties().get("jdwp");
+//			if (jdwpProperties != null) {
+//				// logger.info("Debugger is already running {}",
+//				// jdwpProperties);
+//			} else {
+//				final String jdwpOptions = "transport=dt_socket,server=y,suspend=n,address="
+//						+ allocateFreePort();
+//				// logger.info("Setting up jdwp with options: {}", jdwpOptions);
+//				
+//				Logging.info(this.getClass(),"Starting jwdp in JVM {} with arguments {}", pid, jdwpOptions);
+//				vm.loadAgentLibrary("jdwp", jdwpOptions);
+//			}
+//		} catch (Exception e) {
+//			
+//		} 
+//	}
 
 	/**
 	 * Figure out a free port number

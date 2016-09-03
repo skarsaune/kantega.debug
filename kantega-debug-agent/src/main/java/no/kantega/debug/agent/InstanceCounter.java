@@ -22,9 +22,8 @@ import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.ReflectionException;
 
+import no.kantega.debug.log.Logging;
 import no.kantega.debug.memory.DebugMemoryAccessor;
-
-import org.slf4j.LoggerFactory;
 
 import com.sun.jdi.ClassType;
 import com.sun.jdi.ReferenceType;
@@ -129,14 +128,14 @@ public class InstanceCounter implements DynamicMBean {
 	private Collection<String> loadedClassesFromJdi() {
 		Collection<String> classes = new TreeSet<String>();
 		List<ReferenceType> loadedClasses = this.vm.allClasses();
-		LoggerFactory.getLogger(this.getClass()).debug(
+		Logging.debug(this.getClass(),
 				"VM reports {} loaded classes", loadedClasses.size());
 		for (ReferenceType referenceType : loadedClasses) {
 			if (referenceType instanceof ClassType) {
 				classes.add(referenceType.name());
 			}
 		}
-		LoggerFactory.getLogger(this.getClass()).debug(
+		Logging.debug(this.getClass(),
 				"Of which {} are classes", loadedClasses.size());
 		return classes;
 	}
@@ -157,7 +156,7 @@ public class InstanceCounter implements DynamicMBean {
 	}
 
 	private MBeanAttributeInfo[] getAttributesInfo() {
-		LoggerFactory.getLogger(this.getClass()).trace(
+		Logging.debug(this.getClass(),
 				"Buidling attribute list for " + this.getClass());
 		if (cannotAccessMemory()) {
 			return new MBeanAttributeInfo[0];
@@ -170,8 +169,8 @@ public class InstanceCounter implements DynamicMBean {
 					"Instances of " + className, true, false, false));
 
 		}
-		LoggerFactory.getLogger(this.getClass()).trace(
-				"Using " + attributes.size() + " attributes");
+		Logging.debug(this.getClass(),
+				"Using {} attributes", attributes.size());
 
 		return attributes.toArray(new MBeanAttributeInfo[attributes.size()]);
 	}

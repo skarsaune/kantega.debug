@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URISyntaxException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import no.kantega.debug.log.Logging;
 
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.AgentLoadException;
@@ -21,7 +20,6 @@ import com.sun.tools.attach.VirtualMachine;
  */
 public class InstallAgent {
 
-    private static final Logger logger = LoggerFactory.getLogger(InstallAgent.class);
 
     public static void installAgent(final int pid) throws IOException, AttachNotSupportedException, URISyntaxException, AgentLoadException, AgentInitializationException  {
 
@@ -40,11 +38,11 @@ public class InstallAgent {
         final VirtualMachine vm = attach(pid);
         try {
             if (vm.getAgentProperties().containsValue("decentipede.installed")) {
-                logger.warn("JVM agent already installed, aborting");
+            	Logging.warn(InstallAgent.class, "JVM agent already installed, aborting");
             } else {
 
                 final String agentPath = getMyJar().toString();
-                logger.info("Installing Decentipede JVM agent witn path: {} in JVM with pid: {}", agentPath, pid);
+                Logging.info(InstallAgent.class,"Installing Decentipede JVM agent witn path: {} in JVM with pid: {}", agentPath, pid);
                 vm.loadAgent(agentPath, "decentipede.installed");
 //                setUpDebuggerIfRequrired(vm);
             }
@@ -52,7 +50,7 @@ public class InstallAgent {
             try {
                 vm.detach();
             } catch (Exception e) {
-                logger.info("Exception detaching VM for installing agent");
+            	Logging.info(InstallAgent.class,"Exception detaching VM for installing agent");
             }
         }
     }
@@ -61,10 +59,10 @@ public class InstallAgent {
             AgentInitializationException {
 
         if(isDebuggerRunning(vm)) {
-            logger.info("Debugger is running");
+        	Logging.info(InstallAgent.class,"Debugger is running");
         } else {
             final String jdwpOptions = "jdwp=transport=dt_socket,server=y,suspend=n,address=" + allocateFreePort();
-            logger.info("Setting up jdwp with options: {}" , jdwpOptions);
+            Logging.info(InstallAgent.class,"Setting up jdwp with options: {}" , jdwpOptions);
             vm.loadAgentLibrary("jdwp", jdwpOptions);
         }
     }

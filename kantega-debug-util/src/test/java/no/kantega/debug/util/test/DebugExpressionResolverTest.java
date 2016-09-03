@@ -3,27 +3,16 @@ package no.kantega.debug.util.test;
 import java.util.Collections;
 
 import no.kantega.debug.decompile.ClassFileReverseEnginerer;
-import no.kantega.debug.decompile.JdiLazyLoader;
-import no.kantega.debug.decompile.JdiVarNamesCollector;
 import no.kantega.debug.util.DebugExpressionResolver;
 
 import org.hamcrest.core.Is;
-import org.jetbrains.java.decompiler.main.ClassesProcessor;
-import org.jetbrains.java.decompiler.main.ClassesProcessor.ClassNode;
-import org.jetbrains.java.decompiler.main.DecompilerContext;
-import org.jetbrains.java.decompiler.main.collectors.CounterContainer;
-import org.jetbrains.java.decompiler.main.collectors.ImportCollector;
-import org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable;
-import org.jetbrains.java.decompiler.modules.decompiler.vars.VarProcessor;
-import org.jetbrains.java.decompiler.struct.StructContext;
-import org.jetbrains.java.decompiler.struct.StructMethod;
-import org.jetbrains.java.decompiler.struct.gen.MethodDescriptor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
+import com.sun.jdi.ClassType;
 import com.sun.jdi.LocalVariable;
 import com.sun.jdi.Location;
 
@@ -31,8 +20,9 @@ public class DebugExpressionResolverTest {
 	
 	@Mock Location location;
 	@Mock com.sun.jdi.Method method;
-	@Mock com.sun.jdi.ReferenceType type;
+	@Mock com.sun.jdi.ClassType type;
 	@Mock LocalVariable variable;
+	@Mock ClassType superType;
 
 	@Test
 	public void testExpressionResolution() throws Exception {
@@ -55,21 +45,14 @@ public class DebugExpressionResolverTest {
 		Mockito.when(type.minorVersion()).thenReturn(0);
 		Mockito.when(type.majorVersion()).thenReturn(52);
 		Mockito.when(type.name()).thenReturn("debugtest/DebugTest");
+		Mockito.when(type.signature()).thenReturn("Ldebugtest/DebugTest;");
+		Mockito.when(type.superclass()).thenReturn(this.superType);
 		Mockito.when(type.methods()).thenReturn(Collections.singletonList(method));
+		Mockito.when(this.superType.signature()).thenReturn("Ljava/lang/Object;");
 		final String expression = DebugExpressionResolver.expressionAtLocation(this.location);
 		Assert.assertThat(expression, Is.is("java.lang.Object.toString() : java.lang.String"));
-		StructMethod reverseEngineered = ClassFileReverseEnginerer.reverseEngineer(method);
-		reverseEngineered.expandData();
-		DecompilerContext.setCounterContainer(new CounterContainer());
-		DecompilerContext.setProperty(DecompilerContext.CURRENT_METHOD_DESCRIPTOR, MethodDescriptor.parseDescriptor(method.signature()));
-		DecompilerContext.setProperty(DecompilerContext.CURRENT_METHOD, reverseEngineered);
-		DecompilerContext.setProperty(DecompilerContext.CURRENT_CLASS, reverseEngineered.getClassStruct());
-		DecompilerContext.setVarNamesCollector(new JdiVarNamesCollector(this.method));
-		StructContext context = new StructContext(null, null, new JdiLazyLoader(type));
-		DecompilerContext.setStructContext(context);
-		DecompilerContext.setClassProcessor(new ClassesProcessor(context));
-		DecompilerContext.setImportCollector(new ImportCollector(new ClassNode(ClassNode.CLASS_ROOT, reverseEngineered.getClassStruct())));
-		System.out.println(MethodProcessorRunnable.codeToJava(reverseEngineered, new VarProcessor()).toJava().getOriginalText().toString());
+		System.out.println(ClassFileReverseEnginerer.decompileMethod(this.location));
 	}
+
 
 }
