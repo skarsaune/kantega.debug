@@ -12,6 +12,8 @@ import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.ClassesProcessor;
 import org.jetbrains.java.decompiler.main.ClassesProcessor.ClassNode;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.main.collectors.BytecodeMappingTracer;
+import org.jetbrains.java.decompiler.main.collectors.BytecodeSourceMapper;
 import org.jetbrains.java.decompiler.main.collectors.CounterContainer;
 import org.jetbrains.java.decompiler.main.collectors.ImportCollector;
 import org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable;
@@ -20,6 +22,7 @@ import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.StructContext;
 import org.jetbrains.java.decompiler.struct.StructMethod;
 import org.jetbrains.java.decompiler.struct.attr.StructGeneralAttribute;
+import org.jetbrains.java.decompiler.struct.attr.StructLineNumberTableAttribute;
 import org.jetbrains.java.decompiler.struct.consts.ConstantPool;
 import org.jetbrains.java.decompiler.struct.consts.PooledConstant;
 import org.jetbrains.java.decompiler.struct.consts.PrimitiveConstant;
@@ -110,12 +113,7 @@ public class ClassFileReverseEnginerer {
 				reverseEngineered.getClassStruct());
 		DecompilerContext
 				.setVarNamesCollector(new JdiVarNamesCollector(method));
-//		BytecodeSourceMapper bytecodeSourceMapper = new BytecodeSourceMapper();
-//		for (Location loc : location.method().allLineLocations()) {
-//			bytecodeSourceMapper.addMapping(location.declaringType().name(),
-//					location.method().name(), (int) loc.codeIndex(),
-//					loc.lineNumber());
-//		}
+		
 //		DecompilerContext.setBytecodeSourceMapper(bytecodeSourceMapper);
 		StructContext context = new StructContext(null, null,
 				new JdiLazyLoader(method.declaringType()));
@@ -123,10 +121,28 @@ public class ClassFileReverseEnginerer {
 		DecompilerContext.setClassProcessor(new ClassesProcessor(context));
 		DecompilerContext.setImportCollector(new ImportCollector(new ClassNode(
 				ClassNode.CLASS_ROOT, reverseEngineered.getClassStruct())));
+		BytecodeMappingTracer tracer = new BytecodeMappingTracer();
+		for (StructGeneralAttribute attribute : reverseEngineered.getAttributes()) {
+			if(attribute instanceof StructLineNumberTableAttribute) {
+				tracer.setLineNumberTable((StructLineNumberTableAttribute) attribute);
+			}
+		}
+		
 		return MethodProcessorRunnable
-				.codeToJava(reverseEngineered, new VarProcessor()).toJava()
+				.codeToJava(reverseEngineered, new VarProcessor()).toJava(1, tracer)
 				.getOriginalText().toString();
 	}
+
+//	private static BytecodeSourceMapper byteCodeMapperFor(Location location)
+//			throws AbsentInformationException {
+//		final BytecodeSourceMapper bytecodeSourceMapper = new BytecodeSourceMapper();
+//		for (Location loc : location.method().allLineLocations()) {
+//			bytecodeSourceMapper.addMapping(location.declaringType().name(),
+//					location.method().name(), (int) loc.codeIndex(),
+//					loc.lineNumber());
+//		}
+//		return bytecodeSourceMapper;
+//	}
 
 	// private static void writeAttributes(DataOutputStream out,
 	// ReferenceType declaringType) throws IOException {
