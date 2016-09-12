@@ -112,8 +112,8 @@ public class ClassFileReverseEnginerer {
 				reverseEngineered.getClassStruct());
 		DecompilerContext
 				.setVarNamesCollector(new JdiVarNamesCollector(method));
-		
-//		DecompilerContext.setBytecodeSourceMapper(bytecodeSourceMapper);
+
+		// DecompilerContext.setBytecodeSourceMapper(bytecodeSourceMapper);
 		StructContext context = new StructContext(null, null,
 				new JdiLazyLoader(method.declaringType()));
 		DecompilerContext.setStructContext(context);
@@ -121,28 +121,30 @@ public class ClassFileReverseEnginerer {
 		DecompilerContext.setImportCollector(new ImportCollector(new ClassNode(
 				ClassNode.CLASS_ROOT, reverseEngineered.getClassStruct())));
 		BytecodeMappingTracer tracer = new BytecodeMappingTracer();
-		for (StructGeneralAttribute attribute : reverseEngineered.getAttributes()) {
-			if(attribute instanceof StructLineNumberTableAttribute) {
+		for (StructGeneralAttribute attribute : reverseEngineered
+				.getAttributes()) {
+			if (attribute instanceof StructLineNumberTableAttribute) {
 				tracer.setLineNumberTable((StructLineNumberTableAttribute) attribute);
 			}
 		}
-		
+
 		String decompiledContent = MethodProcessorRunnable
-				.codeToJava(reverseEngineered, new VarProcessor()).toJava(1, tracer)
-				.getOriginalText().toString();
+				.codeToJava(reverseEngineered, new VarProcessor())
+				.toJava(1, tracer).getOriginalText().toString();
 		return replaceVarNames(decompiledContent, method);
 	}
 
-//	private static BytecodeSourceMapper byteCodeMapperFor(Location location)
-//			throws AbsentInformationException {
-//		final BytecodeSourceMapper bytecodeSourceMapper = new BytecodeSourceMapper();
-//		for (Location loc : location.method().allLineLocations()) {
-//			bytecodeSourceMapper.addMapping(location.declaringType().name(),
-//					location.method().name(), (int) loc.codeIndex(),
-//					loc.lineNumber());
-//		}
-//		return bytecodeSourceMapper;
-//	}
+	// private static BytecodeSourceMapper byteCodeMapperFor(Location location)
+	// throws AbsentInformationException {
+	// final BytecodeSourceMapper bytecodeSourceMapper = new
+	// BytecodeSourceMapper();
+	// for (Location loc : location.method().allLineLocations()) {
+	// bytecodeSourceMapper.addMapping(location.declaringType().name(),
+	// location.method().name(), (int) loc.codeIndex(),
+	// loc.lineNumber());
+	// }
+	// return bytecodeSourceMapper;
+	// }
 
 	// private static void writeAttributes(DataOutputStream out,
 	// ReferenceType declaringType) throws IOException {
@@ -189,39 +191,74 @@ public class ClassFileReverseEnginerer {
 	//
 	//
 	// }
+	
+	public static String decompileCurrentLine(Location location) throws Exception {
+		List<Location> allLineLocations = location.method().allLineLocations();
+		String decompiledMethod = decompileMethod(location);
+		if(location.lineNumber() != 0 && allLineLocations.contains(location = location.method().locationsOfLine(location.lineNumber()).get(0))) {
+			String[] lines = decompiledMethod.split("\n");
+			int lineNumber = allLineLocations.indexOf(location);
+			if(lineNumber < lines.length) {
+				return lines[lineNumber];
+			} 
+		}
+		return decompiledMethod;
+	}
 
-	private static String replaceVarNames(String decompiledContent, final Method method) throws AbsentInformationException, ClassNotLoadedException {
+	/**
+	 * Hack: As I have problems feeding in variable information, use rudimentary
+	 * string replacements to fix names afterwards
+	 */
+	private static String replaceVarNames(String decompiledContent,
+			final Method method) throws AbsentInformationException,
+			ClassNotLoadedException {
 
 		final List<LocalVariable> variables = method.variables();
-		for(int reverse = variables.size(); reverse > 0 ; reverse--) {
-			final LocalVariable variable=variables.get(reverse-1);
+		for (int reverse = variables.size(); reverse > 0; reverse--) {
+			final LocalVariable variable = variables.get(reverse - 1);
 			int varIndex = reverse;
-			if(method.isStatic()) {
+			if (method.isStatic()) {
 				varIndex--;
 			}
-			//substitute variable declarations and usages
-			decompiledContent = decompiledContent.replace("<unknown> var"+ varIndex, simplify(variable.typeName()) + " " + variable.name());
-			decompiledContent = decompiledContent.replace("var"+ varIndex, variable.name());
+			// substitute variable declarations and usages
+			decompiledContent = decompiledContent.replace("<unknown> var"
+					+ varIndex,
+					simplify(variable.typeName()) + " " + variable.name());
+			decompiledContent = decompiledContent.replace("var" + varIndex,
+					variable.name());
 		}
-		
-		if(!method.isStatic()) {
-			decompiledContent = decompiledContent.replace("var0.", "");//remove "this" qualifying references
-			//remaining var0 will be passing of this reference
-			decompiledContent = decompiledContent.replace("var0", "this");//remove "this" qualifying references
+
+		if (!method.isStatic()) {
+			decompiledContent = decompiledContent.replace("var0.", "");// remove
+																		// "this"
+																		// qualifying
+																		// references
+			// remaining var0 will be passing of this reference
+			decompiledContent = decompiledContent.replace("var0", "this");// remove
+																			// "this"
+																			// qualifying
+																			// references
 		}
-		decompiledContent=decompiledContent.replace("(<unknown>)", "");//remove redundant casts
-		decompiledContent=decompiledContent.replace("this$0.", "");//implicit reference to enclosing instance
-		
+		decompiledContent = decompiledContent.replace("(<unknown>)", "");// remove
+																			// redundant
+																			// casts
+		decompiledContent = decompiledContent.replace("this$0.", "");// implicit
+																		// reference
+																		// to
+																		// enclosing
+																		// instance
+
 		return decompiledContent;
 	}
 
 	/**
 	 * Strip name of qualifier to make more readable
-	 * @return Simple name 
+	 * 
+	 * @return Simple name
 	 */
 	private static String simplify(final String typeName) {
 		int lastDot = typeName.lastIndexOf('.');
-		if(lastDot > -1) {
+		if (lastDot > -1) {
 			return typeName.substring(lastDot + 1);
 		}
 		return typeName;
@@ -256,17 +293,20 @@ public class ClassFileReverseEnginerer {
 		// https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.7.12
 		final int indexOfLineNumberTable = indexOfConstantPrintedAs(pool,
 				StructGeneralAttribute.ATTRIBUTE_LINE_NUMBER_TABLE);
-		short numberOfAttributes=0;
+		short numberOfAttributes = 0;
 		List<Location> locations = method.allLineLocations();
-		boolean hasLinenumbers = indexOfLineNumberTable > -1 && !locations.isEmpty();
-		if(hasLinenumbers) {
+		boolean hasLinenumbers = indexOfLineNumberTable > -1
+				&& !locations.isEmpty();
+		if (hasLinenumbers) {
 			numberOfAttributes++;
 		}
 		final int indexOfVariables = indexOfConstantPrintedAs(pool,
 				StructGeneralAttribute.ATTRIBUTE_LOCAL_VARIABLE_TABLE);
 		final List<LocalVariable> variables = method.variables();
-		final boolean needsVariableInformation=variables.size() > 0 && indexOfVariables > -1 && JdiReflectionHacks.canRetrievePrivateInfo(method);
-		if(needsVariableInformation) {
+		final boolean needsVariableInformation = variables.size() > 0
+				&& indexOfVariables > -1
+				&& JdiReflectionHacks.canRetrievePrivateInfo(method);
+		if (needsVariableInformation) {
 			numberOfAttributes++;
 		}
 		out.writeShort(numberOfAttributes);
@@ -278,29 +318,34 @@ public class ClassFileReverseEnginerer {
 				out.writeShort((short) location.codeIndex());
 				out.writeShort(location.lineNumber());
 			}
-		} 
-		if(hasLinenumbers && needsVariableInformation) {
+		}
+		if (hasLinenumbers && needsVariableInformation) {
 			out.writeShort(indexOfVariables);
 			out.writeShort(2 + variableCount * 10);
 			out.writeShort(variableCount);
-			
-			int index=0;
-			if(!method.isStatic()) {
-				addVariable(out, pool, 0, bytecodes.length - 1, "this", index++, method.declaringType().signature());
+
+			int index = 0;
+			if (!method.isStatic()) {
+				addVariable(out, pool, 0, bytecodes.length - 1, "this",
+						index++, method.declaringType().signature());
 			}
 			for (final LocalVariable variable : method.variables()) {
-				LocalVariableReflectionExtractor extractor = new LocalVariableReflectionExtractor(variable);
-				addVariable(out, pool, extractor.getStart(), extractor.getLenght(), variable.name(), extractor.getSlot(), variable.signature());
+				LocalVariableReflectionExtractor extractor = new LocalVariableReflectionExtractor(
+						variable);
+				addVariable(out, pool, extractor.getStart(),
+						extractor.getLenght(), variable.name(),
+						extractor.getSlot(), variable.signature());
 			}
 		}
 		return buffer.toByteArray();
 	}
 
-	private static void addVariable(DataOutputStream out, ConstantPool pool, int start, int lenght,
-			String name, int slot, String signature) throws IOException {
+	private static void addVariable(DataOutputStream out, ConstantPool pool,
+			int start, int lenght, String name, int slot, String signature)
+			throws IOException {
 		out.writeShort(start);
 		out.writeShort(lenght);
-		out.writeShort(indexOfConstantPrintedAs(pool,name));
+		out.writeShort(indexOfConstantPrintedAs(pool, name));
 		out.writeShort(indexOfConstantPrintedAs(pool, signature));
 		out.writeShort(slot);
 	}
@@ -348,22 +393,30 @@ public class ClassFileReverseEnginerer {
 		out.writeShort(0);
 	}
 
-	private static int superClass(ReferenceType declaringType, ConstantPool constantPool) {
-		if(declaringType instanceof ClassType) {
-			return indexOfConstantPrintedAs(constantPool, qualifiedClassName(((ClassType) declaringType).superclass()));
+	private static int superClass(ReferenceType declaringType,
+			ConstantPool constantPool) {
+		if (declaringType instanceof ClassType) {
+			return indexOfConstantPrintedAs(
+					constantPool,
+					qualifiedClassName(((ClassType) declaringType).superclass()));
 		}
 		return 2;
 	}
 
-	private static int thisClass(ReferenceType declaringType, ConstantPool constantPool) {
-		return indexOfConstantPrintedAs(constantPool, qualifiedClassName(declaringType));
+	private static int thisClass(ReferenceType declaringType,
+			ConstantPool constantPool) {
+		return indexOfConstantPrintedAs(constantPool,
+				qualifiedClassName(declaringType));
 	}
 
 	private static String qualifiedClassName(ReferenceType type) {
 		String qualifiedClassName = type.signature();
-		//due to different JDI implementations, accept both JNI style and without
-		if(qualifiedClassName.startsWith("L") && qualifiedClassName.endsWith(";")) {
-			qualifiedClassName=qualifiedClassName.substring(1, qualifiedClassName.length() - 1);
+		// due to different JDI implementations, accept both JNI style and
+		// without
+		if (qualifiedClassName.startsWith("L")
+				&& qualifiedClassName.endsWith(";")) {
+			qualifiedClassName = qualifiedClassName.substring(1,
+					qualifiedClassName.length() - 1);
 		}
 		return qualifiedClassName;
 	}
@@ -401,6 +454,5 @@ public class ClassFileReverseEnginerer {
 		return constantPool;
 
 	}
-	
 
 }
