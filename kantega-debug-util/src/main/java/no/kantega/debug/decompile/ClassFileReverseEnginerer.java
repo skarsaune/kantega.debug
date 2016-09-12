@@ -13,7 +13,6 @@ import org.jetbrains.java.decompiler.main.ClassesProcessor;
 import org.jetbrains.java.decompiler.main.ClassesProcessor.ClassNode;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.collectors.BytecodeMappingTracer;
-import org.jetbrains.java.decompiler.main.collectors.BytecodeSourceMapper;
 import org.jetbrains.java.decompiler.main.collectors.CounterContainer;
 import org.jetbrains.java.decompiler.main.collectors.ImportCollector;
 import org.jetbrains.java.decompiler.main.rels.MethodProcessorRunnable;
@@ -128,9 +127,10 @@ public class ClassFileReverseEnginerer {
 			}
 		}
 		
-		return MethodProcessorRunnable
+		String decompiledContent = MethodProcessorRunnable
 				.codeToJava(reverseEngineered, new VarProcessor()).toJava(1, tracer)
 				.getOriginalText().toString();
+		return replaceVarNames(decompiledContent, method);
 	}
 
 //	private static BytecodeSourceMapper byteCodeMapperFor(Location location)
@@ -189,6 +189,43 @@ public class ClassFileReverseEnginerer {
 	//
 	//
 	// }
+
+	private static String replaceVarNames(String decompiledContent, final Method method) throws AbsentInformationException, ClassNotLoadedException {
+
+		final List<LocalVariable> variables = method.variables();
+		for(int reverse = variables.size(); reverse > 0 ; reverse--) {
+			final LocalVariable variable=variables.get(reverse-1);
+			int varIndex = reverse;
+			if(method.isStatic()) {
+				varIndex--;
+			}
+			//substitute variable declarations and usages
+			decompiledContent = decompiledContent.replace("<unknown> var"+ varIndex, simplify(variable.typeName()) + " " + variable.name());
+			decompiledContent = decompiledContent.replace("var"+ varIndex, variable.name());
+		}
+		
+		if(!method.isStatic()) {
+			decompiledContent = decompiledContent.replace("var0.", "");//remove "this" qualifying references
+			//remaining var0 will be passing of this reference
+			decompiledContent = decompiledContent.replace("var0", "this");//remove "this" qualifying references
+		}
+		decompiledContent=decompiledContent.replace("(<unknown>)", "");//remove redundant casts
+		decompiledContent=decompiledContent.replace("this$0.", "");//implicit reference to enclosing instance
+		
+		return decompiledContent;
+	}
+
+	/**
+	 * Strip name of qualifier to make more readable
+	 * @return Simple name 
+	 */
+	private static String simplify(final String typeName) {
+		int lastDot = typeName.lastIndexOf('.');
+		if(lastDot > -1) {
+			return typeName.substring(lastDot + 1);
+		}
+		return typeName;
+	}
 
 	private static byte[] reverseEngineerMethodStructure(final Method method,
 			final ConstantPool pool) throws IOException,
