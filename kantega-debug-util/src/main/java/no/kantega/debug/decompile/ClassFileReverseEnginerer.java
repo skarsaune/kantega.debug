@@ -12,6 +12,7 @@ import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.ClassesProcessor;
 import org.jetbrains.java.decompiler.main.ClassesProcessor.ClassNode;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.main.TextBuffer;
 import org.jetbrains.java.decompiler.main.collectors.BytecodeMappingTracer;
 import org.jetbrains.java.decompiler.main.collectors.CounterContainer;
 import org.jetbrains.java.decompiler.main.collectors.ImportCollector;
@@ -96,8 +97,24 @@ public class ClassFileReverseEnginerer {
 
 	}
 
-	public static String decompileMethod(Location location) throws Exception,
-			IOException {
+	public static String decompileMethod(Location location) throws Exception {
+
+
+		TextBuffer decompiledContent = methodToTextBuffer(location);
+		final String methodLineByLine = decompiledContent.toString();
+		//gobble up any initial blank lines created by line number offsets
+		int begin=0;
+		while(methodLineByLine.charAt(begin) == '\n' || methodLineByLine.charAt(begin) == '\r') {
+			begin++;
+		}
+		//start from first non linebreak character
+		return replaceVarNames(methodLineByLine.substring(begin),
+				location.method());
+
+	}
+
+	private static TextBuffer methodToTextBuffer(Location location)
+			throws Exception, IOException {
 		Method method = location.method();
 		StructMethod reverseEngineered = ClassFileReverseEnginerer
 				.reverseEngineer(method);
@@ -128,10 +145,13 @@ public class ClassFileReverseEnginerer {
 			}
 		}
 
-		String decompiledContent = MethodProcessorRunnable
-				.codeToJava(reverseEngineered, new VarProcessor())
-				.toJava(1, tracer).getOriginalText().toString();
-		return replaceVarNames(decompiledContent, method);
+		TextBuffer toJava = MethodProcessorRunnable.codeToJava(
+				reverseEngineered, new VarProcessor()).toJava(1, tracer);
+
+		for (final Location line : method.allLineLocations()) {
+			toJava.setLineMapping(line.lineNumber(), (int) line.codeIndex());
+		}
+		return toJava;
 	}
 
 	// private static BytecodeSourceMapper byteCodeMapperFor(Location location)
@@ -191,18 +211,21 @@ public class ClassFileReverseEnginerer {
 	//
 	//
 	// }
-	
-	public static String decompileCurrentLine(Location location) throws Exception {
-		List<Location> allLineLocations = location.method().allLineLocations();
-		String decompiledMethod = decompileMethod(location);
-		if(location.lineNumber() != 0 && allLineLocations.contains(location = location.method().locationsOfLine(location.lineNumber()).get(0))) {
-			String[] lines = decompiledMethod.split("\n");
-			int lineNumber = allLineLocations.indexOf(location);
-			if(lineNumber < lines.length) {
-				return lines[lineNumber];
-			} 
+
+	public static String decompileCurrentLine(Location location)
+			throws Exception {
+
+		String decompiled = decompileMethod(location);
+		if(location.method().allLineLocations().size() > 0) {
+			//offset from first line of method to my line
+			int offset=location.lineNumber() - location.method().allLineLocations().get(0).lineNumber();
+			final String[] byLines=decompiled.split("\n");
+			if(offset >= 0 && offset<byLines.length) {
+				return byLines[offset];
+			}
 		}
-		return decompiledMethod;
+		//if not return entire method
+		return decompiled;
 	}
 
 	/**
@@ -295,17 +318,19 @@ public class ClassFileReverseEnginerer {
 				StructGeneralAttribute.ATTRIBUTE_LINE_NUMBER_TABLE);
 		short numberOfAttributes = 0;
 		List<Location> locations = method.allLineLocations();
-		boolean hasLinenumbers = indexOfLineNumberTable > -1
-				&& !locations.isEmpty();
+		boolean hasLinenumbers = false; // not picked up by decompiler anyway :
+										// indexOfLineNumberTable > -1
+		// && !locations.isEmpty();
 		if (hasLinenumbers) {
 			numberOfAttributes++;
 		}
 		final int indexOfVariables = indexOfConstantPrintedAs(pool,
 				StructGeneralAttribute.ATTRIBUTE_LOCAL_VARIABLE_TABLE);
 		final List<LocalVariable> variables = method.variables();
-		final boolean needsVariableInformation = variables.size() > 0
-				&& indexOfVariables > -1
-				&& JdiReflectionHacks.canRetrievePrivateInfo(method);
+		final boolean needsVariableInformation = false; // not picked up anyway
+														// variables.size() > 0
+		// && indexOfVariables > -1
+		// && JdiReflectionHacks.canRetrievePrivateInfo(method);
 		if (needsVariableInformation) {
 			numberOfAttributes++;
 		}
@@ -319,36 +344,36 @@ public class ClassFileReverseEnginerer {
 				out.writeShort(location.lineNumber());
 			}
 		}
-		if (hasLinenumbers && needsVariableInformation) {
-			out.writeShort(indexOfVariables);
-			out.writeShort(2 + variableCount * 10);
-			out.writeShort(variableCount);
-
-			int index = 0;
-			if (!method.isStatic()) {
-				addVariable(out, pool, 0, bytecodes.length - 1, "this",
-						index++, method.declaringType().signature());
-			}
-			for (final LocalVariable variable : method.variables()) {
-				LocalVariableReflectionExtractor extractor = new LocalVariableReflectionExtractor(
-						variable);
-				addVariable(out, pool, extractor.getStart(),
-						extractor.getLenght(), variable.name(),
-						extractor.getSlot(), variable.signature());
-			}
-		}
+//		if (hasLinenumbers && needsVariableInformation) {
+//			out.writeShort(indexOfVariables);
+//			out.writeShort(2 + variableCount * 10);
+//			out.writeShort(variableCount);
+//
+//			int index = 0;
+//			if (!method.isStatic()) {
+//				addVariable(out, pool, 0, bytecodes.length - 1, "this",
+//						index++, method.declaringType().signature());
+//			}
+//			for (final LocalVariable variable : method.variables()) {
+//				LocalVariableReflectionExtractor extractor = new LocalVariableReflectionExtractor(
+//						variable);
+//				addVariable(out, pool, extractor.getStart(),
+//						extractor.getLenght(), variable.name(),
+//						extractor.getSlot(), variable.signature());
+//			}
+//		}
 		return buffer.toByteArray();
 	}
 
-	private static void addVariable(DataOutputStream out, ConstantPool pool,
-			int start, int lenght, String name, int slot, String signature)
-			throws IOException {
-		out.writeShort(start);
-		out.writeShort(lenght);
-		out.writeShort(indexOfConstantPrintedAs(pool, name));
-		out.writeShort(indexOfConstantPrintedAs(pool, signature));
-		out.writeShort(slot);
-	}
+//	private static void addVariable(DataOutputStream out, ConstantPool pool,
+//			int start, int lenght, String name, int slot, String signature)
+//			throws IOException {
+//		out.writeShort(start);
+//		out.writeShort(lenght);
+//		out.writeShort(indexOfConstantPrintedAs(pool, name));
+//		out.writeShort(indexOfConstantPrintedAs(pool, signature));
+//		out.writeShort(slot);
+//	}
 
 	private static int indexOfConstantPrintedAs(final ConstantPool pool,
 			final String signature) {
