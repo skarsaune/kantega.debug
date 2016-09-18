@@ -121,11 +121,11 @@ public interface DebugAgentMBean {
 	 */
 	Map<String, Long> getImplementorsAndCounts(String resourceRoot);
 	
-	/**
-	 * 
-	 * @return List with information about deadlocked threads if any
-	 */
-	List<WaitingThread> getDeadlocks();
+//	/**
+//	 * 
+//	 * @return List with information about deadlocked threads if any
+//	 */
+//	List<WaitingThread> getDeadlocks();
 	
 	/**
 	 *@param threadName String name of thread 

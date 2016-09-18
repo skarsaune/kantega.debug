@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,7 @@ import com.sun.jdi.event.ExceptionEvent;
 import com.sun.jdi.event.LocatableEvent;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.ExceptionRequest;
-
+@SuppressWarnings("restriction")
 public class DebugAgent implements DebugAgentMBean {
 
 	private static final String DEBUG_AGENT_JMX_NAME = "no.kantega.debug:type=DebugAgent";
@@ -47,13 +46,13 @@ public class DebugAgent implements DebugAgentMBean {
 	private final WalkbackPrinter walkbackPrinter=new WalkbackPrinter();
 	private InstanceCounter counter=new InstanceCounter();
 
-	public List<WaitingThread> getDeadlocks() {
-		if(!this.isRunning()) {
-			return Collections.emptyList();
-		} else {
-			return new DeadlockDetectorAgent(this.vm).deadLockedThreads();
-		}
-	}
+//	public List<WaitingThread> getDeadlocks() {
+//		if(!this.isRunning()) {
+//			return Collections.emptyList();
+//		} else {
+//			return new DeadlockDetectorAgent(this.vm).deadLockedThreads();
+//		}
+//	}
 	
 	public String dumpThreadWalkback(final String threadName) {
 		if(!this.isRunning()) {
